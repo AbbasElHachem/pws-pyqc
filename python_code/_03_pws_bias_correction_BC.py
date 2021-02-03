@@ -67,8 +67,7 @@ import multiprocessing as mp
 from scipy.spatial import cKDTree
 from pathlib import Path
 
-
-from pykrige.ok import OrdinaryKriging as OKpy
+from spinterps import OrdinaryKriging as OKpy
 
 # own Libs
 
@@ -81,7 +80,7 @@ from _00_functions import (
                            resampleDf
                            )
 
-from _01_2_read_hdf5 import HDF5
+from _01_read_hdf5 import HDF5
 
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -111,19 +110,19 @@ min_qt_to_correct = 0.75  # correct all qunatiles above it
 vg_sill_b4_scale = 0.07
 vg_range = 4e4
 vg_model_str = 'spherical'
-# vg_model_to_scale = '0.07 Sph(40000)'
+vg_model_to_scale = '0.07 Sph(40000)'
 
 n_workers = 1  # int(cores / 1)
 # n_sub_proccess = cores - n_workers
 # =============================================================================
 
 # main_dir = Path(r"/home/IWS/hachem/pws_CML")
-main_dir = Path(r"X:\staff\elhachem\2020_05_20_pws_CML")
+main_dir = Path(r"X:\staff\elhachem\2020_05_20_Netatmo_CML")
 os.chdir(main_dir)
 # TODO: PATH
 path_to_ppt_pws_data_hdf5 = (
     #    r"X:\exchange\ElHachem\pws_correct_18_19\data_yearly\pws_stn_filtered_2018_2019_yearly.h5")
-    r"P:\2020_DFG_pws\03_data\01_pws\pws_Germany_5min_to_1hour_filter_00.h5")
+    r"P:\2020_DFG_Netatmo\03_data\01_netatmo\netatmo_Germany_5min_to_1hour_filter_00.h5")
 # assert os.path.exists(path_to_ppt_pws_data_hdf5), 'wrong pws Ppt file'
 
 # path_to_ppt_pws_data_hdf5 = (
@@ -131,16 +130,16 @@ path_to_ppt_pws_data_hdf5 = (
 
 path_to_ppt_prim_netw_data_hdf5 = (
     # r"P:\2020_DFG_pws\03_data\03_prim_netw\prim_netw_5min_to_1hour.h5")
-    r"X:\staff\elhachem\ClimXtreme\03_data\00_prim_netw\prim_netw_comb_60min_SS1819.h5")
+    r"X:\staff\elhachem\ClimXtreme\03_data\00_DWD\DWD_60min_SS1819_new.h5")
 assert os.path.exists(path_to_ppt_prim_netw_data_hdf5), 'wrong prim_netw Csv Ppt file'
 
 # pws FIRST FILTER
 
 path_to_pws_gd_stns_2018 = (main_dir / r'indicator_correlation_60min_99_0' /
-                                (r'pws_60min_Good_99_2018.csv'))
+                                (r'Netatmo_60min_Good_99_2018.csv'))
 # pws_60min_Good_99_2018
 path_to_pws_gd_stns_2019 = (main_dir / r'indicator_correlation_60min_99_0' /
-                                (r'pws_60min_Good_99_2019.csv'))
+                                (r'Netatmo_60min_Good_99_2019.csv'))
 
 # pws FIRST FILTER
 # path_to_pws_gd_stns = (
@@ -187,13 +186,9 @@ def convert_ppt_df_to_edf(df, stationname, ppt_min_thr_0_vals):
 
 def process_manager(args):
 
-    (
-
-        path_to_pws_gd_stns_2018,
+    (path_to_pws_gd_stns_2018,
         path_to_pws_gd_stns_2019,
-
         path_to_neatmo_ppt_hdf5,
-        # path_to_neatmo_edf_hdf5,
         path_to_prim_netw_ppt_hdf5) = args
 
     # get all station names for prim_netw
@@ -212,11 +207,8 @@ def process_manager(args):
     y_pws_coords = pws_coords['northing']
     in_pws_df_coords_utm32.loc[:, 'Y'] = y_pws_coords
 
-    #     in_pws_df_coords_utm32 = pd.read_csv(
-    #         path_to_pws_coords_utm32, sep=';',
-    #         index_col=0, engine='c')
-
-    prim_netw_coords = HDF5_prim_netw.get_coordinates(all_prim_netw_stns_ids)
+    prim_netw_coords = HDF5_prim_netw.get_coordinates(
+        all_prim_netw_stns_ids)
 
     in_prim_netw_df_coords_utm32 = pd.DataFrame(
         index=all_prim_netw_stns_ids,
@@ -240,12 +232,7 @@ def process_manager(args):
                                   sep=';',
                                   encoding='utf-8')
 
-    #=========================================================================
-    # pws data
-    # HDF5_pws_edf = HDF5(infile=path_to_neatmo_edf_hdf5)
-    # all_pws_ids = HDF5_pws_edf.get_all_names()^
-
-    # all_pws_ids_with_good_data = df_gd_stns.index.to_list()
+    #=========================================================
 
     all_pws_ids_with_good_data_2018 = df_gd_stns_2018.index.to_list()
     all_pws_ids_with_good_data_2019 = df_gd_stns_2019.index.to_list()
@@ -255,54 +242,6 @@ def process_manager(args):
         set(all_pws_ids_with_good_data_2018) |
         set(all_pws_ids_with_good_data_2019))
     # get indices of those stations
-
-    r"""
-        print('getting indices')
-    stns_array = np.array(all_pws_ids)
-    # good for 2018
-    mask2018 = np.isin(
-        all_pws_ids, all_pws_ids_with_good_data_2019) * 1
-    mask2018_idx = mask2018.nonzero()[0]
-    
-    stns_name = stns_array[mask2018.nonzero()[0]]
-    mask2018_idx_sr = pd.DataFrame(index=stns_name,
-                                   data=mask2018_idx, columns=['Indices'])
-    mask2018_idx_sr.to_csv('pws_Good_2019_Indices.csv', sep=';')
-
-    mask2018_idx_sr = pd.DataFrame(
-                                   index=mask2018_idx)
-
-    mask2018_idx_sr.to_csv('pws_Good_2019_Indices_only.csv', sep=';')
-
-        in_pws_df_coords_wgs84 = pd.DataFrame(
-            index=all_pws_ids,
-            data=pws_coords['lon'], columns=['lon'])
-        lat_pws_coords = pws_coords['lat']
-        z_pws_coords = pws_coords['z']
-        in_pws_df_coords_wgs84.loc[:, 'lat'] = lat_pws_coords
-        in_pws_df_coords_wgs84.loc[:, 'elevation'] = z_pws_coords
-        
-        in_pws_df_coords_wgs84.loc[all_pws_ids_with_good_data, :]
-    
-        df_metadata = pd.DataFrame(index=all_pws_ids_with_good_data,
-                                   columns=['lon', 'lat', 'easting', 'northing',  'elevation'])
-    
-        df_metadata.loc[:, 'lon'] = in_pws_df_coords_wgs84.loc[:, 'lon']
-        df_metadata.loc[:, 'lat'] = in_pws_df_coords_wgs84.loc[:, 'lat']
-        df_metadata.loc[:,
-                        'elevation'] = in_pws_df_coords_wgs84.loc[:, 'elevation']
-        df_metadata.loc[:, 'easting'] = in_pws_df_coords_utm32.loc[:, 'X']
-        df_metadata.loc[:, 'northing'] = in_pws_df_coords_utm32.loc[:, 'Y']
-    
-        df_metadata.to_csv(
-            r'X:\exchange\ElHachem\pws_correct_18_19\data_yearly\pws_stn_coords.csv',
-            sep=';')
-    """
-    # prim_netw data
-#     HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
-#     # HDF5_prim_netw_edf = HDF5(infile=path_to_prim_netw_edf_hdf5)
-#     all_prim_netw_ids = HDF5_prim_netw_ppt.get_all_names()
-    # all_prim_netw_ids_with_data = [_id for _id in all_prim_netw_ids if len(_id) > 0]
 
     #=========================================================================
     # COORDS TREE prim_netw
@@ -331,15 +270,6 @@ def process_manager(args):
     procs = []
     for pws_ids_with_good_data in all_pws_stns_ids_worker:
 
-        #         args_worker.append((in_pws_df_coords_utm32,
-        #                             in_prim_netw_df_coords_utm32,
-        #                             prim_netw_points_tree,
-        #                             prim_netw_stns_ids,
-        #                             # all_prim_netw_stns_ids,
-        #                             pws_ids_with_good_data,
-        #                             # path_to_neatmo_edf_hdf5,
-        #                             path_to_neatmo_ppt_hdf5,
-        #                             path_to_prim_netw_ppt_hdf5))
 
         procs.append(mp.Process(
             target=correct_pws, args=[(in_pws_df_coords_utm32,
@@ -352,23 +282,9 @@ def process_manager(args):
                                        all_pws_ids_with_good_data_2019,
                                        path_to_neatmo_ppt_hdf5,
                                        path_to_prim_netw_ppt_hdf5)]))
-#         for _ in range(5):
-#             while gc.collect() != 0:
-#                 gc.collect()
-#             del gc.garbage[:]
-        # print('gc_collect', gc.collect())
-    # l = mp.Lock()
-    # , initializer=init, initargs=(l,))
+
     print(len(procs))
     [proc.start() for proc in procs]
-    # my_pool = mp.Pool(processes=n_workers)
-
-    # my_pool.map(correct_pws, args_worker)
-
-    # my_pool.terminate()
-
-    # my_pool.close()
-    # my_pool.join()
 
     return
 
@@ -387,40 +303,26 @@ def correct_pws(args):
      pws_ids,
      all_pws_ids_with_good_data_2018,
      all_pws_ids_with_good_data_2019,
-     # path_to_neatmo_edf_hdf5,
      path_to_neatmo_ppt_hdf5,
      path_to_prim_netw_ppt_hdf5) = args
-#     (path_to_pws_coords,
-#      path_to_prim_netw_coords,
-#      path_to_pws_gd_stns,
-#      path_to_neatmo_ppt_hdf5,
-#      path_to_neatmo_edf_hdf5,
-#      path_to_prim_netw_ppt_hdf5,
-#      all_pws_stns_ids_worker) = args
+
     HDF5_pws_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
-    # HDF5_pws_edf = HDF5(infile=path_to_neatmo_edf_hdf5)
     HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
 
-#     for _ in range(5):
-#         while gc.collect() != 0:
-#             gc.collect()
-#         del gc.garbage[:]
-    # print('gc_collect', gc.collect())
 
     def get_prim_netw_ngbr_pws_stn(pws_stn):
         xpws = pws_in_coords_df.loc[pws_stn, 'X']
         ypws = pws_in_coords_df.loc[pws_stn, 'Y']
 
         # find neighboring prim_netw stations
-        # find distance to all prim_netw stations, sort them, select minimum
+        # find distance to all prim_netw stations,
+        # sort them, select minimum
         _, indices = prim_netw_points_tree.query(
             np.array([xpws, ypws]),
             k=nbr_prim_netw_neighbours_to_use + 1)
 
-        prim_netw_stns_near = prim_netw_stns_ids[indices[:nbr_prim_netw_neighbours_to_use]]
-        # dist_pws_prim_netw = distances[:nbr_prim_netw_neighbours_to_use]
-#         prim_netw_stns_near = [stn for stn in prim_netw_stns_near_all
-#                          if stn in all_prim_netw_ids_with_data]
+        prim_netw_stns_near = prim_netw_stns_ids[
+            indices[:nbr_prim_netw_neighbours_to_use]]
         return xpws, ypws, prim_netw_stns_near
 
     def find_prim_netw_ppt_pws_edf(df_col, edf_pws):
@@ -439,20 +341,21 @@ def correct_pws(args):
             if ppt_for_edf >= 0:
                 return ppt_for_edf
 
-    def scale_vg_based_on_prim_netw_ppt(ppt_prim_netw_vals, vg_sill_b4_scale):
-        # sacle variogram based on prim_netw ppt
-        # vg_sill = float(vg_model_to_scale.split(" ")[0])
-        prim_netw_vals_var = np.var(ppt_prim_netw_vals)
-        vg_scaling_ratio = prim_netw_vals_var / vg_sill_b4_scale
+    def scale_vg_based_on_prim_netw_ppt(ppt_dwd_vals, vg_sill_b4_scale):
+        # sacle variogram based on dwd ppt
+#         vg_sill = float(vg_model_to_scale.split(" ")[0])
+        dwd_vals_var = np.var(ppt_dwd_vals)
+        vg_scaling_ratio = dwd_vals_var / vg_sill_b4_scale
 
         if vg_scaling_ratio == 0:
             vg_scaling_ratio = vg_sill_b4_scale
+
         # rescale variogram
-#         vgs_model_prim_netw_ppt = str(
-#             np.round(vg_scaling_ratio, 4)
-#         ) + ' ' + vg_model_to_scale.split(" ")[1]
-#         vgs_model_prim_netw_ppt
-        return vg_scaling_ratio
+        vgs_model_dwd_ppt = str(
+            np.round(vg_scaling_ratio, 4)
+        ) + ' ' + vg_model_to_scale.split(" ")[1]
+#         vgs_model_dwd_ppt
+        return vgs_model_dwd_ppt  # vg_scaling_ratio
 
     def correct_pws_inner_loop(pws_edf):
 
@@ -473,32 +376,28 @@ def correct_pws(args):
 
         # gc.collect()
         # sacle variogram based on prim_netw ppt
-        vg_scaling_ratio = scale_vg_based_on_prim_netw_ppt(
+        vgs_model_dwd_ppt = scale_vg_based_on_prim_netw_ppt(
             prim_netw_ppt_pws_edf.values, vg_sill_b4_scale)
 
         # start kriging pws location
-        OK_prim_netw_pws_crt = OKpy(
-            prim_netw_xcoords, prim_netw_ycoords, prim_netw_ppt_pws_edf.values,
-            variogram_model=vg_model_str,
-            variogram_parameters={
-                'sill': vg_scaling_ratio,
-                'range': vg_range,
-                'nugget': 0})
 
+        OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
+                                            yi=prim_netw_ycoords,
+                                            zi=prim_netw_ppt_pws_edf.values,
+                                            xk=np.array([xpws]),
+                                            yk=np.array([ypws]),
+                                            model=vgs_model_dwd_ppt)
         # sigma = _
         try:
-            zvalues, _ = OK_prim_netw_pws_crt.execute(
-                'points', np.array([xpws]), np.array([ypws]))
+            OK_prim_netw_pws_crt.krige()
+            zvalues = OK_prim_netw_pws_crt.zk.copy()
         except Exception:
             print('ror')
             pass
-#         del(prim_netw_ppt_pws_edf, vg_scaling_ratio, OK_prim_netw_pws_crt)
-#
-#         while gc.collect() != 0:
+
         gc.collect()
         del gc.garbage[:]
-        # print('gc_collect', gc.collect())
-        # print(np.round(zvalues[0], 3))
+
         return np.round(zvalues[0], 3)
 
     def plot_obsv_vs_corrected(pws_stn, df_obsv, df_correct):
@@ -600,18 +499,15 @@ def correct_pws(args):
                     columns=[pws_stn])
 
                 # get prim_netw ppt data for this time period
-                prim_netw_ppt_neigbrs = HDF5_prim_netw_ppt.get_pandas_dataframe_bet_dates(
+                prim_netw_ppt_neigbrs = (
+                    HDF5_prim_netw_ppt.get_pandas_dataframe_bet_dates(
                     prim_netw_stns_near, start_date=pws_edf_df.index[0],
-                    end_date=pws_edf_df.index[-1])
-
-                # prim_netw_ppt_neigbrs = prim_netw_ppt_neigbrs.loc[pws_edf_df.index, :]
+                    end_date=pws_edf_df.index[-1]))
 
                 pws_edf_df_zeros = pws_edf_df[pws_edf_df.values <=
                                                       min_qt_to_correct]
                 pws_edf_df_not_zeros = pws_edf_df[pws_edf_df.values >
                                                           min_qt_to_correct]
-
-    #             print('DF shape: ', pws_edf_df_not_zeros.size)
 
                 pws_ppt_corrected_not_zeros = pws_edf_df_not_zeros.apply(
                     correct_pws_inner_loop, axis=1, raw=True)
