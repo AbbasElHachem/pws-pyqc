@@ -31,3 +31,6 @@ The results show that the filtering of observations from
 PWSs is necessary as the interpolation error after the filtering
 and data transformation decreases significantly. The biggest
 improvement is achieved for the shortest temporal aggregations.
+
+Reference paper:
+How to cite. Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
