@@ -38,10 +38,10 @@ How to cite. Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal w
 **Flowchart from raw PWS data to filtered data for interpolation**
 ![flowchart_netatmo_paper](https://user-images.githubusercontent.com/22959071/106765543-3303fb00-6639-11eb-92d8-d0e06a6044f1.png)
 
-**IBF**
+### Indicator Based Filtering (IBF) ###
 ![indic_corr](https://user-images.githubusercontent.com/22959071/106766133-d6eda680-6639-11eb-8dab-9a6b000752f5.png)
 
-**Bias Correction**
+### Bias Correction ###
 
 
 **EBF**
