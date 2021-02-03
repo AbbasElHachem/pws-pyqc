@@ -4,13 +4,14 @@
 ## How to cite:
 Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
 
-### How to use
+### Main Procedure
 
 **Flowchart from raw PWS data to filtered data for interpolation**
+
 The three main codes corresponding to the IBF, Bias correction and EBF are available in the python_code folder
 ![flowchart_netatmo_paper](https://user-images.githubusercontent.com/22959071/106765543-3303fb00-6639-11eb-92d8-d0e06a6044f1.png)
-
-#### Indicator based Filter IBF
+-----------------------------------------------------------------------------------------------
+### Indicator based Filter IBF
 
 **Corresponsing code**
 _02_pws_indicator_correlation_IBF.py
@@ -22,10 +23,9 @@ _02_pws_indicator_correlation_IBF.py
 ****Output****
   1. A dataframe containing mainly the correlation values between each PWS and the corresponding neighboring station data, and the correlation between the neighboring primary network stations .
   2. The final result is obtained by keeping all the PWS where the correlation between PWS and primary network is greater or equal to the correlation between the primary network stations.
- 
 
-
-#### Bias correction
+-----------------------------------------------------------------------------------------------
+### Bias correction
 
 **Corresponsing code**
 _02_pws_bias_correction_BC.py
@@ -37,8 +37,8 @@ _02_pws_bias_correction_BC.py
 ****Output****
   1. A dataframe for each PWS with the new data, a 'complete' new timeseries, used later on (for example in the interpolation)
  
-
-#### Event based filter (EBF)
+-----------------------------------------------------------------------------------------------
+### Event based filter (EBF)
 
 **Corresponsing code**
 _04_event_based_filter_EBF.py
