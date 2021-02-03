@@ -77,8 +77,9 @@ from scipy.stats import pearsonr as prs
 from _00_functions import (
     select_df_within_period,
     get_cdf_part_abv_thr)
+
 # import class to read HDF5 data and coordinates
-from _01_2_read_hdf5 import HDF5
+from _01_read_hdf5 import HDF5
 
 #============================================================
 # Path to pws and primary network data
@@ -233,10 +234,6 @@ def process_manager(args):
         sep=';')
 
     return
-
-#==============================================================================
-#
-#==============================================================================
 
 # =============================================================================
 # Main Function

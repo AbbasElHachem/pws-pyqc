@@ -309,7 +309,6 @@ def correct_pws(args):
     HDF5_pws_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
     HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
 
-
     def get_prim_netw_ngbr_pws_stn(pws_stn):
         xpws = pws_in_coords_df.loc[pws_stn, 'X']
         ypws = pws_in_coords_df.loc[pws_stn, 'Y']
