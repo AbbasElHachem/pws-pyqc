@@ -34,3 +34,7 @@ improvement is achieved for the shortest temporal aggregations.
 
 Reference paper:
 How to cite. Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
+
+Flowchart from raw PWS data to filtered data for interpolation
+![flowchart_netatmo_paper](https://user-images.githubusercontent.com/22959071/106765543-3303fb00-6639-11eb-92d8-d0e06a6044f1.png)
+
