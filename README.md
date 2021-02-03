@@ -1,5 +1,6 @@
-# pypws
-
+# pws_pyfilter
+  Personal Weather Station (PWS) python filter developed and applied in the following paper:
+  
 ## How to cite:
 Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
 
