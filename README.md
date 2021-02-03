@@ -1,5 +1,5 @@
 # pypws
-Process Pearsonal Weather Station (PWS) data
+## Process Pearsonal Weather Station (PWS) data
 
 The number of personal weather stations
 (PWSs) with data available through the internet is
@@ -32,12 +32,16 @@ PWSs is necessary as the interpolation error after the filtering
 and data transformation decreases significantly. The biggest
 improvement is achieved for the shortest temporal aggregations.
 
-Reference paper:
+## Reference paper:
 How to cite. Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
 
-Flowchart from raw PWS data to filtered data for interpolation
+**Flowchart from raw PWS data to filtered data for interpolation**
 ![flowchart_netatmo_paper](https://user-images.githubusercontent.com/22959071/106765543-3303fb00-6639-11eb-92d8-d0e06a6044f1.png)
 
-IBF
+**IBF**
 ![indic_corr](https://user-images.githubusercontent.com/22959071/106766133-d6eda680-6639-11eb-8dab-9a6b000752f5.png)
 
+**Bias Correction**
+
+
+**EBF**
