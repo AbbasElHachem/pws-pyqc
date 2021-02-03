@@ -106,28 +106,28 @@ n_workers = 7
 def process_manager(args):
 
     (path_to_neatmo_ppt_hdf5,
-        path_to_dwd_ppt_hdf5) = args
+        path_to_prim_netw_ppt_hdf5) = args
 
-    HDF5_netatmo_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
-    all_netatmo_ids = HDF5_netatmo_ppt.get_all_names()
+    HDF5_pws_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
+    all_pws_ids = HDF5_pws_ppt.get_all_names()
 
-    HDF5_dwd_ppt = HDF5(infile=path_to_dwd_ppt_hdf5)
-    all_dwd_stns_ids = HDF5_dwd_ppt.get_all_names()
-    netatmo_coords = HDF5_netatmo_ppt.get_coordinates(all_netatmo_ids)
+    HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
+    all_prim_netw_stns_ids = HDF5_prim_netw_ppt.get_all_names()
+    pws_coords = HDF5_pws_ppt.get_coordinates(all_pws_ids)
 
-    netatmo_in_coords_df = pd.DataFrame(
-        index=all_netatmo_ids,
-        data=netatmo_coords['easting'], columns=['X'])
-    y_netatmo_coords = netatmo_coords['northing']
-    netatmo_in_coords_df.loc[:, 'Y'] = y_netatmo_coords
-    # netatmo_in_coords_df.index.difference(all_netatmo_ids)
-    dwd_coords = HDF5_dwd_ppt.get_coordinates(all_dwd_stns_ids)
+    pws_in_coords_df = pd.DataFrame(
+        index=all_pws_ids,
+        data=pws_coords['easting'], columns=['X'])
+    y_pws_coords = pws_coords['northing']
+    pws_in_coords_df.loc[:, 'Y'] = y_pws_coords
+    # pws_in_coords_df.index.difference(all_pws_ids)
+    prim_netw_coords = HDF5_prim_netw_ppt.get_coordinates(all_prim_netw_stns_ids)
 
-    dwd_in_coords_df = pd.DataFrame(
-        index=all_dwd_stns_ids,
-        data=dwd_coords['easting'], columns=['X'])
-    y_dwd_coords = dwd_coords['northing']
-    dwd_in_coords_df.loc[:, 'Y'] = y_dwd_coords
+    prim_netw_in_coords_df = pd.DataFrame(
+        index=all_prim_netw_stns_ids,
+        data=prim_netw_coords['easting'], columns=['X'])
+    y_prim_netw_coords = prim_netw_coords['northing']
+    prim_netw_in_coords_df.loc[:, 'Y'] = y_prim_netw_coords
 
     #=========================================================================
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
@@ -141,16 +141,16 @@ def process_manager(args):
 
     for time_list in all_timestamps_worker:
         empty_data = np.zeros(shape=(len(time_list),
-                                     len(all_netatmo_ids)))
+                                     len(all_pws_ids)))
         empty_data[empty_data == 0] = np.nan
         df_save_results = pd.DataFrame(index=time_list,
-                                       columns=all_netatmo_ids, data=empty_data)
+                                       columns=all_pws_ids, data=empty_data)
     # args_workers = list(repeat(args, n_worker))
 
-        args_worker.append((path_to_dwd_ppt_hdf5,
-                            dwd_in_coords_df,
+        args_worker.append((path_to_prim_netw_ppt_hdf5,
+                            prim_netw_in_coords_df,
                             path_to_neatmo_ppt_hdf5,
-                            netatmo_in_coords_df,
+                            pws_in_coords_df,
                             time_list,
                             df_save_results))
 
@@ -169,7 +169,7 @@ def process_manager(args):
 
     results_df.to_csv(
         os.path.join(out_save_dir,
-                     'netatmo_flagged_%s.csv' % (_year)),
+                     'pws_flagged_%s.csv' % (_year)),
         sep=';')
 
     return
@@ -180,24 +180,24 @@ def process_manager(args):
 
 def on_evt_filter_pws(args):
 
-    (path_to_dwd_ppt_hdf5,
-     dwd_in_coords_df,
+    (path_to_prim_netw_ppt_hdf5,
+     prim_netw_in_coords_df,
      path_to_neatmo_ppt_hdf5,
-     netatmo_in_coords_df,
+     pws_in_coords_df,
      time_list,
      df_save_results) = args
 
-    HDF5_netatmo_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
-    all_netatmo_ids = HDF5_netatmo_ppt.get_all_names()
+    HDF5_pws_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
+    all_pws_ids = HDF5_pws_ppt.get_all_names()
 
-    HDF5_dwd_ppt = HDF5(infile=path_to_dwd_ppt_hdf5)
-    all_dwd_ids = HDF5_dwd_ppt.get_all_names()
+    HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
+    all_prim_netw_ids = HDF5_prim_netw_ppt.get_all_names()
 
-    def scale_vg_based_on_dwd_ppt(ppt_dwd_vals, vg_sill_b4_scale):
-        # sacle variogram based on dwd ppt
+    def scale_vg_based_on_prim_netw_ppt(ppt_prim_netw_vals, vg_sill_b4_scale):
+        # sacle variogram based on prim_netw ppt
         # vg_sill = float(vg_model_to_scale.split(" ")[0])
-        dwd_vals_var = np.var(ppt_dwd_vals)
-        vg_scaling_ratio = dwd_vals_var / vg_sill_b4_scale
+        prim_netw_vals_var = np.var(ppt_prim_netw_vals)
+        vg_scaling_ratio = prim_netw_vals_var / vg_sill_b4_scale
 
         if vg_scaling_ratio == 0:
             vg_scaling_ratio = vg_sill_b4_scale
@@ -205,25 +205,25 @@ def on_evt_filter_pws(args):
 
         return vg_scaling_ratio
 
-    def plot_good_bad_stns(netatmo_in_coords_df,
-                           ids_netatmo_stns_gd,
-                           ids_netatmo_stns_bad,
+    def plot_good_bad_stns(pws_in_coords_df,
+                           ids_pws_stns_gd,
+                           ids_pws_stns_bad,
                            zvalues,
-                           dwd_ppt,
+                           prim_netw_ppt,
                            zvalues_bad,
-                           dwdx, dwdy,
+                           prim_netwx, prim_netwy,
                            event_date):
 
-        xstns_good = netatmo_in_coords_df.loc[
-            ids_netatmo_stns_gd, 'X'].values.ravel()
-        ystns_good = netatmo_in_coords_df.loc[
-            ids_netatmo_stns_gd, 'Y'].values.ravel()
+        xstns_good = pws_in_coords_df.loc[
+            ids_pws_stns_gd, 'X'].values.ravel()
+        ystns_good = pws_in_coords_df.loc[
+            ids_pws_stns_gd, 'Y'].values.ravel()
 
-        xstns_bad = netatmo_in_coords_df.loc[
-            ids_netatmo_stns_bad, 'X'].values.ravel()
-        ystns_bad = netatmo_in_coords_df.loc[
-            ids_netatmo_stns_bad, 'Y'].values.ravel()
-        max_ppt = max(np.nanmax(zvalues), np.nanmax(dwd_ppt))
+        xstns_bad = pws_in_coords_df.loc[
+            ids_pws_stns_bad, 'X'].values.ravel()
+        ystns_bad = pws_in_coords_df.loc[
+            ids_pws_stns_bad, 'Y'].values.ravel()
+        max_ppt = max(np.nanmax(zvalues), np.nanmax(prim_netw_ppt))
 
         interval_ppt = np.linspace(0.0, 0.99)
         colors_ppt = plt.get_cmap('Blues')(interval_ppt)
@@ -238,9 +238,9 @@ def on_evt_filter_pws(args):
 
         plt.ioff()
         plt.figure(figsize=(12, 8), dpi=100)
-        plt.scatter(dwdx, dwdy, c=dwd_ppt, cmap=cmap_ppt,
+        plt.scatter(prim_netwx, prim_netwy, c=prim_netw_ppt, cmap=cmap_ppt,
                     marker=',', s=10, alpha=0.75, vmin=0, vmax=max_ppt,
-                    label='DWD %d' % dwdx.size)
+                    label='prim_netw %d' % prim_netwx.size)
 
         sc = plt.scatter(xstns_good, ystns_good, c=zvalues,
                          cmap=cmap_ppt,
@@ -277,37 +277,37 @@ def on_evt_filter_pws(args):
     for ix, date_to_correct in enumerate(time_list):
 
         print(ix, '/', len(time_list), '--', date_to_correct)
-        # netatmo_data = pd.read_feather(path_netatamo_edf_fk, columns=netatmo_ids_str)
-        netatmo_data_evt = HDF5_netatmo_ppt.get_pandas_dataframe_for_date(
-            ids=all_netatmo_ids, event_date=date_to_correct).dropna(how='all', axis=1)
+        # pws_data = pd.read_feather(path_netatamo_edf_fk, columns=pws_ids_str)
+        pws_data_evt = HDF5_pws_ppt.get_pandas_dataframe_for_date(
+            ids=all_pws_ids, event_date=date_to_correct).dropna(how='all', axis=1)
 
-        if len(netatmo_data_evt.columns) > 0:
-            netatmo_stns_evt = netatmo_data_evt.columns.to_list()
+        if len(pws_data_evt.columns) > 0:
+            pws_stns_evt = pws_data_evt.columns.to_list()
 
             # coords of stns to correct
-            xstns_interp = netatmo_in_coords_df.loc[
-                netatmo_stns_evt, 'X'].values.ravel()
-            ystns_interp = netatmo_in_coords_df.loc[
-                netatmo_stns_evt, 'Y'].values.ravel()
+            xstns_interp = pws_in_coords_df.loc[
+                pws_stns_evt, 'X'].values.ravel()
+            ystns_interp = pws_in_coords_df.loc[
+                pws_stns_evt, 'Y'].values.ravel()
 
-            # dwd data
-            ppt_dwd_vals_evt = HDF5_dwd_ppt.get_pandas_dataframe_for_date(
-                ids=all_dwd_ids, event_date=date_to_correct)
-            dwd_stns_evt = ppt_dwd_vals_evt.columns.to_list()
+            # prim_netw data
+            ppt_prim_netw_vals_evt = HDF5_prim_netw_ppt.get_pandas_dataframe_for_date(
+                ids=all_prim_netw_ids, event_date=date_to_correct)
+            prim_netw_stns_evt = ppt_prim_netw_vals_evt.columns.to_list()
 
-            dwd_xcoords = dwd_in_coords_df.loc[
-                dwd_stns_evt, 'X'].values.ravel()
-            dwd_ycoords = dwd_in_coords_df.loc[
-                dwd_stns_evt, 'Y'].values.ravel()
+            prim_netw_xcoords = prim_netw_in_coords_df.loc[
+                prim_netw_stns_evt, 'X'].values.ravel()
+            prim_netw_ycoords = prim_netw_in_coords_df.loc[
+                prim_netw_stns_evt, 'Y'].values.ravel()
 
-            vg_scaling_ratio = scale_vg_based_on_dwd_ppt(
-                ppt_dwd_vals=ppt_dwd_vals_evt.values.ravel(),
+            vg_scaling_ratio = scale_vg_based_on_prim_netw_ppt(
+                ppt_prim_netw_vals=ppt_prim_netw_vals_evt.values.ravel(),
                 vg_sill_b4_scale=vg_sill_b4_scale)
 
-            # start kriging Netatmo location
-            OK_dwd_netatmo_crt = OKpy(
-                dwd_xcoords, dwd_ycoords,
-                ppt_dwd_vals_evt.values,
+            # start kriging pws location
+            OK_prim_netw_pws_crt = OKpy(
+                prim_netw_xcoords, prim_netw_ycoords,
+                ppt_prim_netw_vals_evt.values,
                 variogram_model=vg_model_str,
                 variogram_parameters={
                     'sill': vg_scaling_ratio,
@@ -316,7 +316,7 @@ def on_evt_filter_pws(args):
 
             # sigma = _
             try:
-                zvalues, est_var = OK_dwd_netatmo_crt.execute(
+                zvalues, est_var = OK_prim_netw_pws_crt.execute(
                     'points', np.array([xstns_interp]), np.array([ystns_interp]))
             except Exception as msg:
                 print('ror', msg)
@@ -328,7 +328,7 @@ def on_evt_filter_pws(args):
             std_est_vals = np.sqrt(est_var).data
             # calculate difference observed and estimated
             # values
-            diff_obsv_interp = np.abs(netatmo_data_evt.values - zvalues)
+            diff_obsv_interp = np.abs(pws_data_evt.values - zvalues)
 
             idx_good_stns = np.where(
                 diff_obsv_interp <= 3 * std_est_vals)[1]
@@ -339,23 +339,23 @@ def on_evt_filter_pws(args):
 
                 # use additional filter
                 try:
-                    ids_netatmo_stns_gd = np.take(netatmo_stns_evt,
+                    ids_pws_stns_gd = np.take(pws_stns_evt,
                                                   idx_good_stns).ravel()
-                    ids_netatmo_stns_bad = np.take(netatmo_stns_evt,
+                    ids_pws_stns_bad = np.take(pws_stns_evt,
                                                    idx_bad_stns).ravel()
 
                 except Exception as msg:
                     print(msg)
                 # ids of bad stns
-                xstns_bad = netatmo_in_coords_df.loc[
-                    ids_netatmo_stns_bad, 'X'].values.ravel()
-                ystns_bad = netatmo_in_coords_df.loc[
-                    ids_netatmo_stns_bad, 'Y'].values.ravel()
+                xstns_bad = pws_in_coords_df.loc[
+                    ids_pws_stns_bad, 'X'].values.ravel()
+                ystns_bad = pws_in_coords_df.loc[
+                    ids_pws_stns_bad, 'Y'].values.ravel()
 #                 # check if bad are truly bad
-                xstns_good = netatmo_in_coords_df.loc[
-                    ids_netatmo_stns_gd, 'X'].values.ravel()
-                ystns_good = netatmo_in_coords_df.loc[
-                    ids_netatmo_stns_gd, 'Y'].values.ravel()
+                xstns_good = pws_in_coords_df.loc[
+                    ids_pws_stns_gd, 'X'].values.ravel()
+                ystns_good = pws_in_coords_df.loc[
+                    ids_pws_stns_gd, 'Y'].values.ravel()
 
                 # coords of neighbors good
                 neighbors_coords = np.array(
@@ -364,91 +364,91 @@ def on_evt_filter_pws(args):
                 # create a tree from coordinates
                 points_tree = spatial.cKDTree(neighbors_coords)
 
-                neighbors_coords_dwd = np.array(
-                    [(x, y) for x, y in zip(dwd_xcoords, dwd_ycoords)])
+                neighbors_coords_prim_netw = np.array(
+                    [(x, y) for x, y in zip(prim_netw_xcoords, prim_netw_ycoords)])
 
-                points_tree_dwd = spatial.cKDTree(neighbors_coords_dwd)
+                points_tree_prim_netw = spatial.cKDTree(neighbors_coords_prim_netw)
 
 #                 plt.ioff()
 #                 plt.scatter(xstns_good, ystns_good, c='b')
-#                 plt.scatter(dwd_xcoords, dwd_ycoords, c='g')
+#                 plt.scatter(prim_netw_xcoords, prim_netw_ycoords, c='g')
 #                 plt.scatter(xstns_bad, ystns_bad, c='r')
 #                 plt.show()
                 if len(idx_bad_stns) > 0 or len(idx_good_stns) > 0:
-                    for stn_ix, stn_bad in zip(idx_bad_stns, ids_netatmo_stns_bad):
-                        ppt_bad = netatmo_data_evt.loc[:, stn_bad].values
+                    for stn_ix, stn_bad in zip(idx_bad_stns, ids_pws_stns_bad):
+                        ppt_bad = pws_data_evt.loc[:, stn_bad].values
                         # print('ppt_bad', ppt_bad)
                         if ppt_bad >= 0.:
 
-                            xstn_bd = netatmo_in_coords_df.loc[
+                            xstn_bd = pws_in_coords_df.loc[
                                 stn_bad, 'X']
-                            ystn_bd = netatmo_in_coords_df.loc[
+                            ystn_bd = pws_in_coords_df.loc[
                                 stn_bad, 'Y']
 
                             idxs_neighbours = points_tree.query_ball_point(
                                 np.array((xstn_bd, ystn_bd)), 1e4)
 
-                            ids_neighbours = ids_netatmo_stns_gd[idxs_neighbours]
+                            ids_neighbours = ids_pws_stns_gd[idxs_neighbours]
                             ids_neighbours_evt = np.in1d(
-                                netatmo_stns_evt, ids_neighbours)
+                                pws_stns_evt, ids_neighbours)
 
-                            idxs_neighbours_dwd = points_tree_dwd.query_ball_point(
+                            idxs_neighbours_prim_netw = points_tree_prim_netw.query_ball_point(
                                 np.array((xstn_bd, ystn_bd)), 1e4)
 
-                            ids_neighbours_dwd_evt = np.array(
-                                dwd_stns_evt)[idxs_neighbours_dwd]
+                            ids_neighbours_prim_netw_evt = np.array(
+                                prim_netw_stns_evt)[idxs_neighbours_prim_netw]
 
                             if len(ids_neighbours_evt) > 0:
-                                ppt_netatmo_ngbrs = netatmo_data_evt.loc[:,
+                                ppt_pws_ngbrs = pws_data_evt.loc[:,
                                                                          ids_neighbours_evt]
-                                ppt_netatmo_data = ppt_netatmo_ngbrs.values
-                                xstn_ngbr = netatmo_in_coords_df.loc[
-                                    ppt_netatmo_ngbrs.columns, 'X'].values.ravel()
-                                ystn_ngbr = netatmo_in_coords_df.loc[
-                                    ppt_netatmo_ngbrs.columns, 'Y'].values.ravel()
+                                ppt_pws_data = ppt_pws_ngbrs.values
+                                xstn_ngbr = pws_in_coords_df.loc[
+                                    ppt_pws_ngbrs.columns, 'X'].values.ravel()
+                                ystn_ngbr = pws_in_coords_df.loc[
+                                    ppt_pws_ngbrs.columns, 'Y'].values.ravel()
 
-                                if ppt_netatmo_data.size == 0:
-                                    ppt_netatmo_data = 1000
+                                if ppt_pws_data.size == 0:
+                                    ppt_pws_data = 1000
                             else:
-                                ppt_netatmo_data = 1000
+                                ppt_pws_data = 1000
 
-                            if len(ids_neighbours_dwd_evt) > 0:
-                                ppt_dwd_ngbrs = ppt_dwd_vals_evt.loc[:,
-                                                                     ids_neighbours_dwd_evt]
-                                ppt_dwd_data = ppt_dwd_ngbrs.values
-                                dwd_xstn_ngbr = dwd_in_coords_df.loc[
-                                    ppt_dwd_ngbrs.columns, 'X'].values.ravel()
-                                dwd_ystn_ngbr = dwd_in_coords_df.loc[
-                                    ppt_dwd_ngbrs.columns, 'Y'].values.ravel()
+                            if len(ids_neighbours_prim_netw_evt) > 0:
+                                ppt_prim_netw_ngbrs = ppt_prim_netw_vals_evt.loc[:,
+                                                                     ids_neighbours_prim_netw_evt]
+                                ppt_prim_netw_data = ppt_prim_netw_ngbrs.values
+                                prim_netw_xstn_ngbr = prim_netw_in_coords_df.loc[
+                                    ppt_prim_netw_ngbrs.columns, 'X'].values.ravel()
+                                prim_netw_ystn_ngbr = prim_netw_in_coords_df.loc[
+                                    ppt_prim_netw_ngbrs.columns, 'Y'].values.ravel()
 
 #                                 plt.ioff()
 #                                 plt.scatter(xstn_bd, ystn_bd, c='r')
 #                                 plt.scatter(xstn_ngbr, ystn_ngbr, c='b')
-#                                 plt.scatter(dwd_xstn_ngbr,
-#                                             dwd_ystn_ngbr, c='g')
+#                                 plt.scatter(prim_netw_xstn_ngbr,
+#                                             prim_netw_ystn_ngbr, c='g')
 #                                 plt.show()
-                                if ppt_dwd_ngbrs.size == 0:
-                                    ppt_dwd_ngbrs = 1000
+                                if ppt_prim_netw_ngbrs.size == 0:
+                                    ppt_prim_netw_ngbrs = 1000
                             else:
-                                ppt_dwd_ngbrs = 1000  # always wrong
+                                ppt_prim_netw_ngbrs = 1000  # always wrong
                             try:
-                                if (ppt_bad > np.nanmin(ppt_netatmo_data) or
-                                        ppt_bad > np.nanmin(ppt_dwd_data)):
+                                if (ppt_bad > np.nanmin(ppt_pws_data) or
+                                        ppt_bad > np.nanmin(ppt_prim_netw_data)):
                                     # print('added bad to good\n')
                                     # print('ppt_bad', ppt_bad)
-                                    ids_netatmo_stns_gd_final = np.append(
-                                        ids_netatmo_stns_gd, stn_bad)
+                                    ids_pws_stns_gd_final = np.append(
+                                        ids_pws_stns_gd, stn_bad)
                                     idx_good_stns_final = np.append(
                                         idx_good_stns, stn_ix)
 
-                                    ids_netatmo_stns_bad_final = np.setdiff1d(
-                                        ids_netatmo_stns_bad, stn_bad)
-                                    ids_netatmo_stns_bad_final.size
+                                    ids_pws_stns_bad_final = np.setdiff1d(
+                                        ids_pws_stns_bad, stn_bad)
+                                    ids_pws_stns_bad_final.size
                                     idx_bad_stns_final = np.setdiff1d(
                                         idx_bad_stns, stn_ix)
 
-                                    assert stn_bad in ids_netatmo_stns_gd_final
-                                    assert stn_bad not in ids_netatmo_stns_bad_final
+                                    assert stn_bad in ids_pws_stns_gd_final
+                                    assert stn_bad not in ids_pws_stns_bad_final
                                 else:
                                     pass
                                     # print('not added bad stn')
@@ -463,9 +463,9 @@ def on_evt_filter_pws(args):
                                 # raise Exception
 
                 else:
-                    ids_netatmo_stns_gd_final = ids_netatmo_stns_gd
+                    ids_pws_stns_gd_final = ids_pws_stns_gd
                     idx_good_stns_final = idx_good_stns
-                    ids_netatmo_stns_bad_final = ids_netatmo_stns_bad
+                    ids_pws_stns_bad_final = ids_pws_stns_bad
                     idx_bad_stns_final = idx_bad_stns
 
                 try:
@@ -476,31 +476,31 @@ def on_evt_filter_pws(args):
 
                     # save results gd+1, bad -1
                     df_save_results.loc[
-                        date_to_correct, ids_netatmo_stns_gd_final] = 1
+                        date_to_correct, ids_pws_stns_gd_final] = 1
                     df_save_results.loc[
-                        date_to_correct, ids_netatmo_stns_bad_final] = -1
+                        date_to_correct, ids_pws_stns_bad_final] = -1
                 except Exception as msg3:
                     print(msg3)
                     continue
 
                 try:
-                    zvalues_good = netatmo_data_evt.loc[date_to_correct,
-                                                        ids_netatmo_stns_gd_final].values.ravel()
-                    zvalues_bad = netatmo_data_evt.loc[date_to_correct,
-                                                       ids_netatmo_stns_bad_final].values.ravel()
+                    zvalues_good = pws_data_evt.loc[date_to_correct,
+                                                        ids_pws_stns_gd_final].values.ravel()
+                    zvalues_bad = pws_data_evt.loc[date_to_correct,
+                                                       ids_pws_stns_bad_final].values.ravel()
 
                     # plot configuration
                     max_ppt = max(np.nanmax(zvalues_good),
-                                  np.nanmax(ppt_dwd_vals_evt.values.ravel()))
+                                  np.nanmax(ppt_prim_netw_vals_evt.values.ravel()))
                     if max_ppt >= 30:
                         print('plotting map')
-                        plot_good_bad_stns(netatmo_in_coords_df,
-                                           ids_netatmo_stns_gd_final,
-                                           ids_netatmo_stns_bad_final,
+                        plot_good_bad_stns(pws_in_coords_df,
+                                           ids_pws_stns_gd_final,
+                                           ids_pws_stns_bad_final,
                                            zvalues_good,
-                                           ppt_dwd_vals_evt.values.ravel(),
+                                           ppt_prim_netw_vals_evt.values.ravel(),
                                            zvalues_bad,
-                                           dwd_xcoords, dwd_ycoords,
+                                           prim_netw_xcoords, prim_netw_ycoords,
                                            date_to_correct)
                         plt.close()
                 except Exception as msg2:
@@ -510,7 +510,7 @@ def on_evt_filter_pws(args):
 
     return df_save_results
 #     df_save_results.to_csv(
-#         os.path.join(out_save_dir, 'netatmos_flagged_%s.csv' % _year),
+#         os.path.join(out_save_dir, 'pwss_flagged_%s.csv' % _year),
 #         sep=';')
 
 

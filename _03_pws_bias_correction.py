@@ -612,9 +612,7 @@ def correct_pws(args):
                                                           min_qt_to_correct]
 
     #             print('DF shape: ', pws_edf_df_not_zeros.size)
-    #
-    # #             train = parallelize_dataframe(pws_edf_df,
-    # #                  correct_pws_inner_loop, n_cores=4)
+
                 pws_ppt_corrected_not_zeros = pws_edf_df_not_zeros.apply(
                     correct_pws_inner_loop, axis=1, raw=True)
 
@@ -625,11 +623,6 @@ def correct_pws(args):
                 pws_ppt_corrected_filled.loc[
                     pws_ppt_corrected_not_zeros.index,
                     pws_stn] = pws_ppt_corrected_not_zeros.values.ravel()
-
-                # pws_ppt_df_summer.loc['2019-06-03']
-                # pws_ppt_corrected_filled.loc['2019-06-03']
-
-                # resample to daily to find maximum values
 
                 end = time.time()
 
