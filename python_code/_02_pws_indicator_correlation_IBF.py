@@ -23,7 +23,6 @@ Input Files
 Returns
 #=========
 Df_correlations: df containing for every pws station:
-    Location x,y
     ID1 neighbor in prim_netw
     Seperating distance pws-prim_netw, 
     
