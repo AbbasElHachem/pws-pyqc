@@ -53,7 +53,6 @@ __last_update__ = '15.04.2020'
 import tables
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class HDF5(object):
@@ -64,23 +63,13 @@ class HDF5(object):
         """Creates an object containing the hdf5 file
         ---------
         Parameters
-            infile_def: str
-                default hdf5 data file
-                choose time aggregation ['daily', '5' or '60']
-                + version ['_op', '_re']
-                e.g.: 'daily_op'
 
             infile: str, optional
                 File and pathname of input hdf5. Default are the hdf5 files
                 containing all data depending on the given agg_in
 
-            basepath: str, optional
-                Basepath of Niedsim Folder, default 'X:\\projects\\2012Niedsim'
-                (ONLY for Windows systems)
 
         """
-
-        # default paths and filenames of hdf5
 
         self.infile = infile
 

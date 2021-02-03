@@ -9,8 +9,13 @@ Functions are called in different scripts, refer to the script to know where
 """
 
 __author__ = "Abbas El Hachem"
-__copyright__ = 'Institut fuer Wasser- und Umweltsystemmodellierung - IWS'
+__institution__ = ('Institute for Modelling Hydraulic and Environmental '
+                   'Systems (IWS), University of Stuttgart')
+__copyright__ = ('Attribution 4.0 International (CC BY 4.0); see more '
+                 'https://creativecommons.org/licenses/by/4.0/')
 __email__ = "abbas.el-hachem@iws.uni-stuttgart.de"
+__version__ = 0.1
+__last_update__ = '15.04.2020'
 
 # ============================================================================
 import os
@@ -18,27 +23,19 @@ import os
 import fnmatch
 import pyproj
 import shapefile
-import fiona
-import osr
 
 import numpy as np
 import pandas as pd
-# import seaborn as sn
-# import wradlib as wrl
 
 import scipy.spatial as spatial
-import matplotlib.colors as mcolors
+
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-# import scipy.stats
-from matplotlib import path
-# from adjustText import adjust_text
-import scipy.optimize as optimize
+
 from scipy.optimize import curve_fit
 from scipy.stats import spearmanr as spr
 from scipy.stats import pearsonr as pears
 
-# TODO: work more on documentation
 #==============================================================================
 #
 #==============================================================================
