@@ -16,8 +16,8 @@ The three main codes corresponding to the IBF, Bias correction and EBF are avail
 
 -----------------------------------------------------------------------------------------------
 
-```diff
--### Indicator based Filter IBF+
+diff
+### Indicator based Filter IBF
 
 
 **Corresponsing code**
@@ -37,7 +37,7 @@ _02_pws_indicator_correlation_IBF.py
 
 -----------------------------------------------------------------------------------------------
 
-!### Bias correction!
+### Bias correction
 
 **Corresponsing code**
 _02_pws_bias_correction_BC.py
@@ -52,7 +52,7 @@ _02_pws_bias_correction_BC.py
   1. A dataframe for each PWS with the new data, a 'complete' new timeseries, used later on (for example in the interpolation)
  
 -----------------------------------------------------------------------------------------------
-+### Event based filter (EBF)+
+### Event based filter (EBF)
 
 **Corresponsing code**
 _04_event_based_filter_EBF.py
