@@ -50,10 +50,9 @@ from pathlib import Path
 
 from matplotlib.colors import LinearSegmentedColormap
 
-# from spinterps import (OrdinaryKriging)
-from pykrige.ok import OrdinaryKriging as OKpy
+from spinterps import OrdinaryKriging as OKpy
 
-from _01_2_read_hdf5 import HDF5
+from _01_read_hdf5 import HDF5
 
 pyximport.install()
 
@@ -66,7 +65,7 @@ not_convective_season = [11, 12, 1, 2, 3]  # oct till april
 vg_sill_b4_scale = 0.07
 vg_range = 4e4
 vg_model_str = 'spherical'
-# vg_model_to_scale = '0.07 Sph(40000)'
+vg_model_to_scale = '0.07 Sph(40000)'
 
 _year = '2019'
 
@@ -87,7 +86,7 @@ assert os.path.exists(path_to_ppt_netatmo_data_hdf5), 'wrong NETATMO Ppt file'
 
 path_to_ppt_dwd_data_hdf5 = (
     # r"P:\2020_DFG_Netatmo\03_data\03_dwd\DWD_5min_to_1hour.h5")
-    r"X:\staff\elhachem\ClimXtreme\03_data\00_DWD\dwd_comb_60min_SS1819.h5")
+    r"X:\staff\elhachem\ClimXtreme\03_data\00_DWD\dwd_comb_60min_SS1819_new.h5")
 assert os.path.exists(path_to_ppt_dwd_data_hdf5), 'wrong DWD Csv Ppt file'
 
 title_ = r'second_filter_PWS_%s_new' % _year
@@ -193,17 +192,21 @@ def on_evt_filter_pws(args):
     HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
     all_prim_netw_ids = HDF5_prim_netw_ppt.get_all_names()
 
-    def scale_vg_based_on_prim_netw_ppt(ppt_prim_netw_vals, vg_sill_b4_scale):
-        # sacle variogram based on prim_netw ppt
-        # vg_sill = float(vg_model_to_scale.split(" ")[0])
-        prim_netw_vals_var = np.var(ppt_prim_netw_vals)
-        vg_scaling_ratio = prim_netw_vals_var / vg_sill_b4_scale
+    def scale_vg_based_on_prim_netw_ppt(ppt_dwd_vals, vg_sill_b4_scale):
+        # sacle variogram based on dwd ppt
+#         vg_sill = float(vg_model_to_scale.split(" ")[0])
+        dwd_vals_var = np.var(ppt_dwd_vals)
+        vg_scaling_ratio = dwd_vals_var / vg_sill_b4_scale
 
         if vg_scaling_ratio == 0:
             vg_scaling_ratio = vg_sill_b4_scale
-        # rescale variogram
 
-        return vg_scaling_ratio
+        # rescale variogram
+        vgs_model_dwd_ppt = str(
+            np.round(vg_scaling_ratio, 4)
+        ) + ' ' + vg_model_to_scale.split(" ")[1]
+#         vgs_model_dwd_ppt
+        return vgs_model_dwd_ppt  # vg_scaling_ratio
 
     def plot_good_bad_stns(pws_in_coords_df,
                            ids_pws_stns_gd,
@@ -300,20 +303,26 @@ def on_evt_filter_pws(args):
             prim_netw_ycoords = prim_netw_in_coords_df.loc[
                 prim_netw_stns_evt, 'Y'].values.ravel()
 
-            vg_scaling_ratio = scale_vg_based_on_prim_netw_ppt(
-                ppt_prim_netw_vals=ppt_prim_netw_vals_evt.values.ravel(),
-                vg_sill_b4_scale=vg_sill_b4_scale)
-
+#             vg_scaling_ratio = scale_vg_based_on_prim_netw_ppt(
+#                 ppt_prim_netw_vals=ppt_prim_netw_vals_evt.values.ravel(),
+#                 vg_sill_b4_scale=vg_sill_b4_scale)
+            vgs_model_dwd_ppt = scale_vg_based_on_prim_netw_ppt(
+            ppt_prim_netw_vals_evt.values, vg_sill_b4_scale)
             # start kriging pws location
-            OK_prim_netw_pws_crt = OKpy(
-                prim_netw_xcoords, prim_netw_ycoords,
-                ppt_prim_netw_vals_evt.values,
-                variogram_model=vg_model_str,
-                variogram_parameters={
-                    'sill': vg_scaling_ratio,
-                    'range': vg_range,
-                    'nugget': 0})
-
+#             OK_prim_netw_pws_crt = OKpy(
+#                 prim_netw_xcoords, prim_netw_ycoords,
+#                 ppt_prim_netw_vals_evt.values,
+#                 variogram_model=vg_model_str,
+#                 variogram_parameters={
+#                     'sill': vg_scaling_ratio,
+#                     'range': vg_range,
+#                     'nugget': 0})
+            OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
+                                            yi=prim_netw_ycoords,
+                                            zi=ppt_prim_netw_vals_evt.values,
+                                            xk=np.array([xstns_interp]),
+                                            yk=np.array([ystns_interp]),
+                                            model=vgs_model_dwd_ppt)
             # sigma = _
             try:
                 zvalues, est_var = OK_prim_netw_pws_crt.execute(
