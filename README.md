@@ -59,7 +59,6 @@ _02_pws_bias_correction_BC.py
 -----------------------------------------------------------------------------------------------
 ### Event based filter (EBF)
 
-
 **Corresponsing code**
 _04_event_based_filter_EBF.py
 
@@ -75,7 +74,7 @@ _04_event_based_filter_EBF.py
  
 **Results** PWS stations that do not fit in the spatial neighboring are flagged
 
-![event_date_2019_10_01 22_00_00](https://user-images.githubusercontent.com/22959071/106913547-652e5f00-6704-11eb-8572-b2d2daf16d41.png)
+![event_date_2019_10_01 15_00_00](https://user-images.githubusercontent.com/22959071/106916083-13d39f00-6707-11eb-9d9a-7f3e76367063.png)
 -----------------------------------------------------------------------------------------------
 
 ### Author:
