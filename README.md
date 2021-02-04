@@ -73,7 +73,10 @@ _04_event_based_filter_EBF.py
   1. A dataframe containing for every event (or timestamp) the PWS that should be flagged and
     not used for the interpolation of the corresponding event or timestep
  
+**Results** PWS stations that do not fit in the spatial neighboring are flagged
 
+![event_date_2019_10_01 22_00_00](https://user-images.githubusercontent.com/22959071/106913547-652e5f00-6704-11eb-8572-b2d2daf16d41.png)
 -----------------------------------------------------------------------------------------------
-#### Examples
------------------------------------------------------------------------------------------------
+
+### Author:
+Abbas El Hachem, department of Hydrology and Geohydrology, University of Stuttgart, Germany
