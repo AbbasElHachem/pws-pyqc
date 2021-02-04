@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """
-# Description
-#=========
 Name:    Filter pws stations based on Indicator Correlation
 Purpose: Find validity of pws Station for interpolation purposes
 
@@ -15,13 +13,13 @@ Repeat this procedure for all pws station, or different quantile threshold
 and for different neighbors and temporal resolution.
 
 Parameters
-#=========
+
 Input Files
     hdf5_file for the prim_netw station data and coordinates
     hdf5_file for pws precipitation station data and coordinates
     
 Returns
-#=========
+
 Df_correlations: df containing for every pws station:
     ID1 neighbor in prim_netw
     Seperating distance pws-prim_netw, 
@@ -69,7 +67,7 @@ import timeit
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-import requests
+
 from scipy.spatial import cKDTree
 from scipy.stats import pearsonr as prs
 import matplotlib.pyplot as plt
@@ -97,6 +95,9 @@ assert os.path.exists(path_to_ppt_prim_netw_data_hdf5), 'wrong prim_netw file'
 # ===========================================================
 # some parameters for the filtering
 # ===========================================================
+# flag to plot final results and save pws good ids
+plot_save_results_df = True
+
 # min distance used for selecting neighbors
 min_dist_thr_ppt = 100 * 1e4  # in m, for ex: 30km or 50km
 
@@ -132,20 +133,17 @@ end_date = '%s-10-30 23:00:00' % _year
 n_workers = 5
 
 # def out save directory
-out_save_dir_orig = (
-    r"X:\staff\elhachem\GitHub\pws-pyqc\test_results")
-
-plot_save_results_df = True
+out_save_dir_orig = (r"X:\staff\elhachem\GitHub\pws-pyqc\test_results")
 
 if not os.path.exists(out_save_dir_orig):
     os.mkdir(out_save_dir_orig)
-#==============================================================================
+#===========================================================
 #
-#==============================================================================
+#===========================================================
 
 
 def plot_indic_corr(df_results):
-
+    ''' plot the indicator correlation value before and after the filtering'''
     df_results.dropna(how='all', inplace=True)
     y0_prim_netw = df_results.loc[
         :, 'Bool_Pearson_Correlation_prim_netw_prim_netw'].values.ravel()
@@ -167,7 +165,7 @@ def plot_indic_corr(df_results):
     y_pws_keep = df_results.loc[ids_pws_keep,
                                'Bool_Pearson_Correlation_pws_prim_netw'
                                ].dropna().values.ravel()
-
+    # save the results in a dataframe
     pws_to_keep = pd.DataFrame(
         index=ids_pws_keep)
     pws_to_keep.to_csv(os.path.join(
@@ -181,9 +179,11 @@ def plot_indic_corr(df_results):
     _, axs = plt.subplots(1, 1, sharex=True, sharey=True,
                             figsize=(12, 8), dpi=100)
 
-    axs.scatter(x0_pws_all, y0_pws_all, c='b', alpha=0.65, marker='.', s=50,
+    axs.scatter(x0_pws_all, y0_pws_all, c='b',
+                alpha=0.65, marker='.', s=50,
                 label='pws_raw=%d' % y0_pws_all.size)
-    axs.scatter(x_pws_keep, y_pws_keep, c='r', alpha=0.75, marker='x', s=60,
+    axs.scatter(x_pws_keep, y_pws_keep, c='r',
+                alpha=0.75, marker='x', s=60,
                 label='pws_keep=%d' % y_pws_keep.size)
 
     axs.set_xlim([0, max_x + 500])
@@ -208,9 +208,8 @@ def plot_indic_corr(df_results):
 
 def process_manager(args):
 
-    (# path_to_pws_coords_utm32,
-        # path_to_prim_netw_coords_utm32,
-        path_pws_ppt_df_hdf5,
+    ''' Function giving parameters to each subprocess'''
+    (path_pws_ppt_df_hdf5,
         path_to_prim_netw_data_hdf5,
         neighbor_to_chose,
         val_thr_percent,
@@ -287,8 +286,7 @@ def process_manager(args):
     my_pool.join()
 
     results_df = pd.concat(results)
-
-
+    # save results all pws good and bad ones
     results_df.to_csv(
         os.path.join(out_save_dir_orig,
                      'indic_corr_filter.csv'),
@@ -298,9 +296,9 @@ def process_manager(args):
         plot_indic_corr(results_df)
     return
 
-# =============================================================================
+# ===========================================================
 # Main Function
-# =============================================================================
+# ===========================================================
 
 
 def compare_pws_prim_netw_indicator_correlations(args):
@@ -314,7 +312,6 @@ def compare_pws_prim_netw_indicator_correlations(args):
      Add the result to a new dataframe and return it
 
     '''
-    # print('\n######\n getting all station names, reading dfs \n#######\n')
     (path_to_prim_netw_data_hdf5,
      in_prim_netw_df_coords_utm32,
      path_pws_ppt_df_hdf5,
@@ -332,7 +329,8 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
     HDF5_prim_netw = HDF5(infile=path_to_prim_netw_data_hdf5)
 
-    alls_stns_len = len(all_pws_ids)  # to count number of stations
+    alls_stns_len = len(all_pws_ids)
+    # to count number of stations
 
     # iterating through pws ppt stations
     for ppt_stn_id in all_pws_ids:
@@ -340,8 +338,8 @@ def compare_pws_prim_netw_indicator_correlations(args):
         print('\n**\n pws stations is %d/%d**\n'
               % (alls_stns_len, len(all_pws_ids)))
 
-        alls_stns_len -= 1  # reduce number of remaining stations
-        # ppt_stn_id = '70:ee:50:27:72:44'
+        # reduce number of remaining stations
+        alls_stns_len -= 1
         try:
             # read first pws station
             try:
@@ -378,12 +376,12 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
                 stn_2_prim_netw = prim_netw_stns_ids[indices[neighbor_to_chose]]
 
-                min_dist_ppt_prim_netw = np.round(distances[neighbor_to_chose], 2)
+                min_dist_ppt_prim_netw = np.round(
+                    distances[neighbor_to_chose], 2)
 
                 if min_dist_ppt_prim_netw <= min_dist_thr_ppt:
 
                     # check if prim_netw station is near, select and read prim_netw stn
-
                     try:
                         df_prim_netw_orig = HDF5_prim_netw.get_pandas_dataframe(
                             stn_2_prim_netw)
@@ -399,9 +397,9 @@ def compare_pws_prim_netw_indicator_correlations(args):
                         pws_ppt_season.index[0],
                         pws_ppt_season.index[-1])
 
-                    # =================================================
+                    # ===============================================
                     # Check neighboring prim_netw stations
-                    # ==================================================
+                    # ===============================================
                     # for the prim_netw station, neighboring the pws
                     # get id, coordinates and distances of prim_netw
                     # neighbor
@@ -409,9 +407,10 @@ def compare_pws_prim_netw_indicator_correlations(args):
                         in_prim_netw_df_coords_utm32.loc[stn_2_prim_netw, 'X'],
                         in_prim_netw_df_coords_utm32.loc[stn_2_prim_netw, 'Y'])
 
-                    distances_prim_netw, indices_prim_netw = prim_netw_points_tree.query(
+                    distances_prim_netw, indices_prim_netw = (
+                        prim_netw_points_tree.query(
                         np.array([xprim_netw, yprim_netw]),
-                        k=5)
+                        k=5))
                     # +1 to get neighbor not same stn
                     stn_near_prim_netw = prim_netw_stns_ids[
                         indices_prim_netw[neighbor_to_chose + 1]]
@@ -507,8 +506,10 @@ def compare_pws_prim_netw_indicator_correlations(args):
                             # select only upper tail both dataframes
                             #=====================================
 
-                            prim_netw2_cdf_x, prim_netw2_cdf_y = get_cdf_part_abv_thr(
+                            prim_netw2_cdf_x, prim_netw2_cdf_y = (
+                                get_cdf_part_abv_thr(
                                 df_prim_netw_ngbr_season.values, -0.1)
+                                )
 
                             # get prim_netw2 ppt thr from cdf
                             prim_netw2_ppt_thr_per = prim_netw2_cdf_x[np.where(
@@ -618,9 +619,9 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
     return df_results_correlations
 
-#==============================================================================
+#===========================================================
 # CALL FUNCTION HERE
-#==============================================================================
+#===========================================================
 
 
 if __name__ == '__main__':
