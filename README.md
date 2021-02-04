@@ -1,12 +1,12 @@
 # pws-pyqc
   Personal Weather Station (PWS) quality control python filter.
- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ -----------------------------------------------------------------------------------------------
 ## How to cite:
 Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
 
 -----------------------------------------------------------------------------------------------
 ### Main Procedure
-------------------
+
 
 **Flowchart from raw PWS data to filtered data for interpolation**
 
@@ -17,7 +17,6 @@ The three main codes corresponding to the IBF, Bias correction and EBF are avail
 
 -----------------------------------------------------------------------------------------------
 ### Indicator based Filter IBF
------------------------------------------------------------------------------------------------
 
 
 **Corresponsing code**
@@ -37,7 +36,7 @@ _02_pws_indicator_correlation_IBF.py
 
 -----------------------------------------------------------------------------------------------
 ### Bias correction
------------------------------------------------------------------------------------------------
+
 
 **Corresponsing code**
 _02_pws_bias_correction_BC.py
@@ -53,7 +52,7 @@ _02_pws_bias_correction_BC.py
  
 -----------------------------------------------------------------------------------------------
 ### Event based filter (EBF)
------------------------------------------------------------------------------------------------
+
 
 **Corresponsing code**
 _04_event_based_filter_EBF.py
