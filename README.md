@@ -53,6 +53,9 @@ _02_pws_bias_correction_BC.py
 ****Output****
   1. A dataframe for each PWS with the new data, a 'complete' new timeseries, used later on (for example in the interpolation)
  
+**Results**: example of corrected data of one PWS
+![pws_stn_70_ee_50_00_0b_40](https://user-images.githubusercontent.com/22959071/106904335-5d1df180-66fb-11eb-8937-8aaa24c43579.png)
+
 -----------------------------------------------------------------------------------------------
 ### Event based filter (EBF)
 
