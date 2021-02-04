@@ -34,7 +34,7 @@ _02_pws_indicator_correlation_IBF.py
   2. The final result is obtained by keeping all the PWS where the correlation between PWS and 
     primary network is greater or equal to the correlation between the primary network stations.
 
-**Results**
+**Results**: indicator filter applied to the test_data
 
 ![indic_corr_99](https://user-images.githubusercontent.com/22959071/106903818-c5200800-66fa-11eb-9efc-8e21011791c5.png)
 -----------------------------------------------------------------------------------------------
