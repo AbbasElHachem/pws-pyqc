@@ -22,19 +22,12 @@ import os
 
 import fnmatch
 import pyproj
-import shapefile
 
 import numpy as np
 import pandas as pd
 
 import scipy.spatial as spatial
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-
-from scipy.optimize import curve_fit
-from scipy.stats import spearmanr as spr
-from scipy.stats import pearsonr as pears
 
 #==============================================================================
 #
@@ -250,16 +243,6 @@ def calculate_probab_ppt_below_thr(ppt_data, ppt_thr):
 #
 #==============================================================================
 
-# both correct
-# def build_edf_fr_vals(ppt_data):
-#     # Construct EDF, need to check if it works
-#     """ construct empirical distribution function given data values """
-#     data_sorted = np.sort(ppt_data, axis=0)[::-1]
-#     x0 = np.squeeze(data_sorted)[::-1]
-#     y0 = (np.arange(data_sorted.size) / len(data_sorted))
-#     return x0, y0
-
-
 #
 def build_edf_fr_vals(data):
     """ construct empirical distribution function given data values """
@@ -286,49 +269,6 @@ def get_cdf_part_abv_thr(ppt_data, ppt_thr):
     # assert y_abv_thr[0] == p0, 'something is wrong with probability cal'
 
     return x_abv_thr, y_abv_thr
-#==============================================================================
-#
-#==============================================================================
-
-
-def get_dwd_stns_coords(coords_df_file, x_col_name, y_col_name, index_col_name,
-                        sep_type):
-    '''function used to return to coordinates dataframe of the DWD stations'''
-    in_coords_df = pd.read_csv(coords_df_file, sep=sep_type,
-                               dtype={index_col_name: str},
-                               engine='c')
-    in_coords_df.set_index(index_col_name, inplace=True)
-    stn_ids = in_coords_df.index
-    x_vals = in_coords_df[x_col_name].values.ravel()
-    y_vals = in_coords_df[y_col_name].values.ravel()
-    return in_coords_df, x_vals, y_vals, stn_ids
-#==============================================================================
-#
-#==============================================================================
-
-
-def get_nearest_dwd_station(first_stn_id, coords_df_file,
-                            x_col_name, y_col_name, index_col_name,
-                            sep_type, neighbor_to_chose):
-    ''' Find for one station, the closest neibhouring station'''
-    # read df coordinates and get station ids, and x, y values
-    in_coords_df, x_vals, y_vals, stn_ids = get_dwd_stns_coords(
-        coords_df_file, x_col_name, y_col_name, index_col_name, sep_type)
-    # make a tupples from the coordinates
-    coords_tuples = np.array([(x, y) for x, y in zip(x_vals, y_vals)])
-    # create a tree from coordinates
-    points_tree = spatial.cKDTree(coords_tuples)
-
-    xstn = in_coords_df.loc[first_stn_id, x_col_name]
-    ystn = in_coords_df.loc[first_stn_id, y_col_name]
-
-    distances, indices = points_tree.query([xstn, ystn], k=10)
-    coords_nearest_nbr = coords_tuples[indices[neighbor_to_chose]]
-    stn_near = str(stn_ids[indices[neighbor_to_chose]])
-    distance_near = distances[neighbor_to_chose]
-
-    return coords_nearest_nbr, stn_near, distance_near
-
 #==============================================================================
 #
 #==============================================================================
