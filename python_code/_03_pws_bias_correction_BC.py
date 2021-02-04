@@ -52,20 +52,13 @@ import os
 import time
 import gc
 
-# os.environ[str('MKL_NUM_THREADS')] = str(1)
-# os.environ[str('NUMEXPR_NUM_THREADS')] = str(1)
-# os.environ[str('OMP_NUM_THREADS')] = str(1)
 
-# other Libs
-
-# import pyximport
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 
 from scipy.spatial import cKDTree
-from pathlib import Path
 
 from spinterps import OrdinaryKriging as OKpy
 
@@ -85,15 +78,10 @@ from _01_read_hdf5 import HDF5
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-# pyximport.install()
-# cores = cpu_count() - 1  # Number of CPU cores on system
-# pandarallel.initialize(nb_workers=2)
-# set settings
 gc.set_threshold(0, 0, 0)
-# =============================================================================
-
-start_date = '2018-01-01 00:00:00'
-end_date = '2019-12-31 00:00:00'
+# ===========================================================
+start_date = '2019-04-01 00:00:00'
+end_date = '2019-10-31 00:00:00'
 
 # minimum hourly values that should be available per pws station
 min_req_ppt_vals = 30 * 24 * 2
@@ -109,52 +97,37 @@ min_qt_to_correct = 0.75  # correct all qunatiles above it
 
 vg_sill_b4_scale = 0.07
 vg_range = 4e4
-vg_model_str = 'spherical'
-vg_model_to_scale = '0.07 Sph(40000)'
+vg_model_str = 'Sph'
+vg_model_to_scale = '%0.3f %s(%0.1f)' % (
+    vg_sill_b4_scale, vg_model_str, vg_range)
 
-n_workers = 1  # int(cores / 1)
-# n_sub_proccess = cores - n_workers
-# =============================================================================
-
-# main_dir = Path(r"/home/IWS/hachem/pws_CML")
-main_dir = Path(r"X:\staff\elhachem\2020_05_20_Netatmo_CML")
-os.chdir(main_dir)
-# TODO: PATH
+n_workers = 1
+# ===========================================================
 path_to_ppt_pws_data_hdf5 = (
-    #    r"X:\exchange\ElHachem\pws_correct_18_19\data_yearly\pws_stn_filtered_2018_2019_yearly.h5")
-    r"P:\2020_DFG_Netatmo\03_data\01_netatmo\netatmo_Germany_5min_to_1hour_filter_00.h5")
-# assert os.path.exists(path_to_ppt_pws_data_hdf5), 'wrong pws Ppt file'
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\pws_test_data.h5")
 
-# path_to_ppt_pws_data_hdf5 = (
-#     r"C:\Users\hachem\Downloads\pws_filtered_2018_2019_5min_to_1hour.h5")
+assert os.path.exists(path_to_ppt_pws_data_hdf5), 'wrong pws file'
 
 path_to_ppt_prim_netw_data_hdf5 = (
-    # r"P:\2020_DFG_pws\03_data\03_prim_netw\prim_netw_5min_to_1hour.h5")
-    r"X:\staff\elhachem\ClimXtreme\03_data\00_DWD\DWD_60min_SS1819_new.h5")
-assert os.path.exists(path_to_ppt_prim_netw_data_hdf5), 'wrong prim_netw Csv Ppt file'
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\primary_network_test_data.h5")
+assert os.path.exists(path_to_ppt_prim_netw_data_hdf5), 'wrong prim_netw file'
 
 # pws FIRST FILTER
 
-path_to_pws_gd_stns_2018 = (main_dir / r'indicator_correlation_60min_99_0' /
-                                (r'Netatmo_60min_Good_99_2018.csv'))
-# pws_60min_Good_99_2018
-path_to_pws_gd_stns_2019 = (main_dir / r'indicator_correlation_60min_99_0' /
-                                (r'Netatmo_60min_Good_99_2019.csv'))
+path_to_pws_gd_stns = (
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_results\indic_corr_filter.csv")
 
-# pws FIRST FILTER
-# path_to_pws_gd_stns = (
-#     main_dir / "indicator_correlation/pws_Good_99.csv")
 # for output folder
-title_ = r'corrected_PWS_DE_yearly'
+title_ = r'corrected_PWS'
 
-out_save_dir = main_dir / title_
-
+out_save_dir = (
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_results")
 if not os.path.exists(out_save_dir):
     os.mkdir(out_save_dir)
 
-#==============================================================================
+#===========================================================
 # MAIN FUNCTION
-#==============================================================================
+#===========================================================
 
 
 def convert_ppt_df_to_edf(df, stationname, ppt_min_thr_0_vals):
@@ -179,15 +152,15 @@ def convert_ppt_df_to_edf(df, stationname, ppt_min_thr_0_vals):
     df_ppt_edf.sort_index(inplace=True)
     df_ppt_edf.drop([stationname], axis=1, inplace=True)
     return df_ppt_edf
-#==============================================================================
+#===========================================================
 #
-#==============================================================================
+#===========================================================
 
 
 def process_manager(args):
 
-    (path_to_pws_gd_stns_2018,
-        path_to_pws_gd_stns_2019,
+    (
+        path_to_pws_gd_stns,
         path_to_neatmo_ppt_hdf5,
         path_to_prim_netw_ppt_hdf5) = args
 
@@ -217,35 +190,25 @@ def process_manager(args):
     in_prim_netw_df_coords_utm32.loc[:, 'Y'] = y_prim_netw_coords
 
     # pws first filter
-#     df_gd_stns = pd.read_csv(path_to_pws_gd_stns,
-#                              index_col=1,
-#                              sep=';',
-#                              encoding='utf-8')
 
-    df_gd_stns_2018 = pd.read_csv(path_to_pws_gd_stns_2018,
-                                  index_col=1,
-                                  sep=';',
-                                  encoding='utf-8')
-
-    df_gd_stns_2019 = pd.read_csv(path_to_pws_gd_stns_2019,
-                                  index_col=1,
+    df_gd_stns = pd.read_csv(path_to_pws_gd_stns,
+                                  index_col=0,
                                   sep=';',
                                   encoding='utf-8')
 
     #=========================================================
 
-    all_pws_ids_with_good_data_2018 = df_gd_stns_2018.index.to_list()
-    all_pws_ids_with_good_data_2019 = df_gd_stns_2019.index.to_list()
+    all_pws_ids_with_good_data = df_gd_stns.index.to_list()
 
     # combine all good stns
-    all_pws_ids_with_good_data = list(
-        set(all_pws_ids_with_good_data_2018) |
-        set(all_pws_ids_with_good_data_2019))
-    # get indices of those stations
+    # if more than one year
+#     all_pws_ids_with_good_data = list(
+#         set(all_pws_ids_with_good_data_2018) |
+#         set(all_pws_ids_with_good_data_2019))
 
-    #=========================================================================
+    #=========================================================
     # COORDS TREE prim_netw
-    #=========================================================================
+    #=========================================================
     # create a tree from prim_netw coordinates
 
     prim_netw_coords_xy = [(x, y) for x, y in zip(
@@ -265,7 +228,6 @@ def process_manager(args):
 
     all_pws_stns_ids_worker = np.array_split(
         all_pws_ids_with_good_data, n_workers)
-    # args_worker = []
 
     procs = []
     for pws_ids_with_good_data in all_pws_stns_ids_worker:
@@ -276,10 +238,7 @@ def process_manager(args):
                                        in_prim_netw_df_coords_utm32,
                                        prim_netw_points_tree,
                                        prim_netw_stns_ids,
-                                       # ['70:ee:50:2a:e5:b2'],
                                        pws_ids_with_good_data,
-                                       all_pws_ids_with_good_data_2018,
-                                       all_pws_ids_with_good_data_2019,
                                        path_to_neatmo_ppt_hdf5,
                                        path_to_prim_netw_ppt_hdf5)]))
 
@@ -299,10 +258,7 @@ def correct_pws(args):
      prim_netw_in_coords_df,
      prim_netw_points_tree,
      prim_netw_stns_ids,
-     # all_prim_netw_ids_with_data,
      pws_ids,
-     all_pws_ids_with_good_data_2018,
-     all_pws_ids_with_good_data_2019,
      path_to_neatmo_ppt_hdf5,
      path_to_prim_netw_ppt_hdf5) = args
 
@@ -341,20 +297,19 @@ def correct_pws(args):
                 return ppt_for_edf
 
     def scale_vg_based_on_prim_netw_ppt(ppt_dwd_vals, vg_sill_b4_scale):
-        # sacle variogram based on dwd ppt
-#         vg_sill = float(vg_model_to_scale.split(" ")[0])
+        # sacle variogram based on variance ppt
+
         dwd_vals_var = np.var(ppt_dwd_vals)
         vg_scaling_ratio = dwd_vals_var / vg_sill_b4_scale
 
         if vg_scaling_ratio == 0:
             vg_scaling_ratio = vg_sill_b4_scale
 
-        # rescale variogram
-        vgs_model_dwd_ppt = str(
-            np.round(vg_scaling_ratio, 4)
-        ) + ' ' + vg_model_to_scale.split(" ")[1]
-#         vgs_model_dwd_ppt
-        return vgs_model_dwd_ppt  # vg_scaling_ratio
+        vgs_model_dwd_ppt = (str(
+            np.round(vg_scaling_ratio, 4)) + ' '
+            +vg_model_to_scale.split(" ")[1])
+
+        return vgs_model_dwd_ppt
 
     def correct_pws_inner_loop(pws_edf):
 
@@ -373,27 +328,25 @@ def correct_pws(args):
         prim_netw_ycoords = np.array(
             prim_netw_in_coords_df.loc[prim_netw_stns, 'Y'])
 
-        # gc.collect()
         # sacle variogram based on prim_netw ppt
         vgs_model_dwd_ppt = scale_vg_based_on_prim_netw_ppt(
             prim_netw_ppt_pws_edf.values, vg_sill_b4_scale)
 
         # start kriging pws location
-
         OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
                                             yi=prim_netw_ycoords,
                                             zi=prim_netw_ppt_pws_edf.values,
                                             xk=np.array([xpws]),
                                             yk=np.array([ypws]),
                                             model=vgs_model_dwd_ppt)
-        # sigma = _
+
         try:
             OK_prim_netw_pws_crt.krige()
             zvalues = OK_prim_netw_pws_crt.zk.copy()
         except Exception:
-            print('ror')
-            pass
+            print('error kriging pws location')
 
+        # to avoid memory leaks
         gc.collect()
         del gc.garbage[:]
 
@@ -455,29 +408,19 @@ def correct_pws(args):
         pws_stn_str = pws_stn.replace(':', '_')
         print('Correcting ', pws_stn, ': ', ix, '/', len(pws_ids))
 
-        if pws_stn in all_pws_ids_with_good_data_2018:
-            start_date = '2018-04-01 00:00:00'
-            end_date = '2018-10-31 23:00:00'
-
-        if pws_stn in all_pws_ids_with_good_data_2019:
-            start_date = '2019-04-01 00:00:00'
-            end_date = '2019-10-31 23:00:00'
 
         try:
             pws_ppt_df = HDF5_pws_ppt.get_pandas_dataframe(pws_stn)
 
-            pws_ppt_df_1819 = select_df_within_period(pws_ppt_df,
+            pws_ppt_df_start_end = select_df_within_period(pws_ppt_df,
                                                           start=start_date,
                                                           end=end_date)
 
             # select only convective season
             pws_ppt_df_summer = select_convective_season(
-                df=pws_ppt_df_1819,
+                df=pws_ppt_df_start_end,
                 month_lst=not_convective_season).dropna(how='all')
 
-            # pws_ppt_df_summer.loc['2018-05-29']
-
-            # pws_ppt_df_summer[pws_ppt_df_summer>0].dropna()
             if pws_ppt_df_summer.size > min_req_ppt_vals:
 
                 pws_edf_df = convert_ppt_df_to_edf(
@@ -543,6 +486,7 @@ def correct_pws(args):
         except Exception:
             raise Exception
             pass
+        break
 
 
 #----------------------------------------------------------------------------
@@ -551,8 +495,7 @@ def correct_pws(args):
 if __name__ == '__main__':
 
     args = (
-        path_to_pws_gd_stns_2018,
-        path_to_pws_gd_stns_2019,
+        path_to_pws_gd_stns,
         path_to_ppt_pws_data_hdf5,
         path_to_ppt_prim_netw_data_hdf5)
     process_manager(args)

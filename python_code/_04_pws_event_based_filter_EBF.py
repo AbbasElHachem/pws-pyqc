@@ -71,32 +71,27 @@ _year = '2019'
 
 start_date = '%s-04-01 00:00:00' % _year
 end_date = '%s-10-31 23:00:00' % _year
+
+n_workers = 7
 # =============================================================================
 
-# main_dir = Path(r"/home/IWS/hachem/Netatmo_CML")
-main_dir = Path(r"X:\staff\elhachem\2020_05_20_Netatmo_CML")
-os.chdir(main_dir)
+path_to_ppt_pws_data_hdf5 = (
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\pws_test_data.h5")
 
-# "X:\exchange\ElHachem\Netatmo_correct_18_19
-path_to_ppt_netatmo_data_hdf5 = (
-    r"X:\exchange\ElHachem\Netatmo_correct_18_19"
-    r"\data_%s_new\PWS_filtered_corrected_%s.h5"
-    % (_year, _year))
-assert os.path.exists(path_to_ppt_netatmo_data_hdf5), 'wrong NETATMO Ppt file'
+assert os.path.exists(path_to_ppt_pws_data_hdf5), 'wrong pws file'
 
-path_to_ppt_dwd_data_hdf5 = (
-    # r"P:\2020_DFG_Netatmo\03_data\03_dwd\DWD_5min_to_1hour.h5")
-    r"X:\staff\elhachem\ClimXtreme\03_data\00_DWD\dwd_comb_60min_SS1819_new.h5")
-assert os.path.exists(path_to_ppt_dwd_data_hdf5), 'wrong DWD Csv Ppt file'
+path_to_ppt_prim_netw_data_hdf5 = (
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\primary_network_test_data.h5")
+assert os.path.exists(path_to_ppt_prim_netw_data_hdf5), 'wrong prim_netw file'
 
 title_ = r'second_filter_PWS_%s_new' % _year
 
-out_save_dir = main_dir / title_
-
+# def out save directory
+out_save_dir = (
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_results")
 if not os.path.exists(out_save_dir):
     os.mkdir(out_save_dir)
 
-n_workers = 7
 #==============================================================================
 #
 #==============================================================================
@@ -501,7 +496,7 @@ def on_evt_filter_pws(args):
                     # plot configuration
                     max_ppt = max(np.nanmax(zvalues_good),
                                   np.nanmax(ppt_prim_netw_vals_evt.values.ravel()))
-                    if max_ppt >= 30:
+                    if max_ppt >= 0:
                         print('plotting map')
                         plot_good_bad_stns(pws_in_coords_df,
                                            ids_pws_stns_gd_final,
@@ -527,8 +522,8 @@ def on_evt_filter_pws(args):
 if __name__ == '__main__':
 
     args = (
-        path_to_ppt_netatmo_data_hdf5,
-        path_to_ppt_dwd_data_hdf5)
+        path_to_ppt_pws_data_hdf5,
+        path_to_ppt_prim_netw_data_hdf5)
 
     process_manager(args)
 

@@ -2,6 +2,7 @@ eclipse.preferences.version=1
 encoding//python_code/_00_functions.py=utf-8
 encoding//python_code/_02_pws_indicator_correlation_IBF.py=utf-8
 encoding//python_code/_03_pws_bias_correction_BC.py=utf-8
+encoding//python_code/_04_pws_event_based_filter_EBF.py=utf-8
 encoding/_00_functions.py=utf-8
 encoding/_01_read_hdf5.py=utf-8
 encoding/_02_pws_indicator_correlation.py=utf-8

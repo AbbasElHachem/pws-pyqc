@@ -69,10 +69,10 @@ import timeit
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-
+import requests
 from scipy.spatial import cKDTree
 from scipy.stats import pearsonr as prs
-
+import matplotlib.pyplot as plt
 # own functions from script _00_functions
 from _00_functions import (
     select_df_within_period,
@@ -86,13 +86,12 @@ from _01_read_hdf5 import HDF5
 #============================================================
 
 path_to_ppt_pws_data_hdf5 = (
-    r"X:\staff\elhachem\Data\pws_data\rain_RLP_2020_1hour"
-    r"\pws_RLP_2020__60min_2020.h5")
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\pws_test_data.h5")
+
 assert os.path.exists(path_to_ppt_pws_data_hdf5), 'wrong pws file'
 
 path_to_ppt_prim_netw_data_hdf5 = (
-    r"X:\staff\elhachem\ClimXtreme\03_data\00_prim_netw"
-    r"\prim_netw_comb_60min_data_agg_60min_2020.h5")
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\primary_network_test_data.h5")
 assert os.path.exists(path_to_ppt_prim_netw_data_hdf5), 'wrong prim_netw file'
 
 # ===========================================================
@@ -113,7 +112,7 @@ lower_percentile_val_lst = [99.0]
 aggregation_frequencies = ['60min']
 
 # define for which year to do the filtering
-_year = '2020'
+_year = '2019'
 
 # refers to prim_netw neighbor (0=first)
 neighbors_to_chose_lst = [0]  # , 1, 2, 3]
@@ -126,23 +125,78 @@ min_req_ppt_vals = 0  # 2 * 24 * 30
 date_fmt = '%Y-%m-%d %H:%M:%S'
 
 # select data only within this period
-start_date = '%s-01-01 00:00:00' % _year
+start_date = '%s-04-01 00:00:00' % _year
 end_date = '%s-10-30 23:00:00' % _year
 
 # nbr of workers for multiproccesing
-n_workers = 7
+n_workers = 5
 
 # def out save directory
 out_save_dir_orig = (
-    r'X:\staff\elhachem\2020_05_20_pws_CML'
-    r'\indicator_correlation_%s_%s_RLP2020' % (aggregation_frequencies[0],
-                                               str(lower_percentile_val_lst[0]).replace('.', '_')))
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_results")
+
+plot_results = True
 
 if not os.path.exists(out_save_dir_orig):
     os.mkdir(out_save_dir_orig)
 #==============================================================================
 #
 #==============================================================================
+
+
+def plot_indic_corr(df_results):
+
+    df_results.dropna(how='all', inplace=True)
+    y0_prim_netw = df_results.loc[
+        :, 'Bool_Pearson_Correlation_prim_netw_prim_netw'].values.ravel()
+
+    x0_pws_all = df_results.loc[:, 'Distance to neighbor'].values.ravel()
+    y0_pws_all = df_results.loc[:, 'Bool_Pearson_Correlation_pws_prim_netw'
+                                ].values.ravel()
+    assert y0_prim_netw.shape == y0_pws_all.shape
+    ix_pws_keep = np.where(y0_pws_all >= y0_prim_netw)[0]
+    ix_0_corr = np.where(y0_pws_all > 0)[0]
+    ix_1_corr = np.where(y0_pws_all < 1)[0]
+
+    ix_pws_keep_final = np.intersect1d(
+        np.intersect1d(ix_pws_keep, ix_0_corr), ix_1_corr)
+    ids_pws_keep = df_results.iloc[ix_pws_keep_final, :].index.to_list()
+    print('keeping', len(ids_pws_keep), '/', y0_pws_all.size)
+    x_pws_keep = df_results.loc[ids_pws_keep,
+                               'Distance to neighbor'].dropna().values.ravel()
+    y_pws_keep = df_results.loc[ids_pws_keep,
+                               'Bool_Pearson_Correlation_pws_prim_netw'
+                               ].dropna().values.ravel()
+    max_x = np.nanmax(x0_pws_all)
+
+    plt.ioff()
+
+    _, axs = plt.subplots(1, 1, sharex=True, sharey=True,
+                            figsize=(12, 8), dpi=100)
+
+    axs.scatter(x0_pws_all, y0_pws_all, c='b', alpha=0.65, marker='.', s=50,
+                label='pws_raw=%d' % y0_pws_all.size)
+    axs.scatter(x_pws_keep, y_pws_keep, c='r', alpha=0.75, marker='x', s=60,
+                label='pws_keep=%d' % y_pws_keep.size)
+
+    axs.set_xlim([0, max_x + 500])
+
+    axs.set_xticks(np.arange(0, max_x + 500, 5000))
+
+    axs.set_ylim([-0.1, 1.1])
+    axs.set_xlabel('Distance [m]', labelpad=14)
+
+    axs.set_ylabel('Indicator Correlation', labelpad=16)
+    plt.legend(loc=0)
+    axs.grid(alpha=.25)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_save_dir_orig ,
+            r'indic_corr_99.png'),
+            papertype='a4',
+            bbox_inches='tight', pad_inches=.2)
+    plt.close()
+    return
 
 
 def process_manager(args):
@@ -231,8 +285,10 @@ def process_manager(args):
     results_df.to_csv(
         os.path.join(out_save_dir_orig,
                      'indic_corr_filter.csv'),
-        sep=';')
+        sep=';', float_format='%0.2f')
 
+    if plot_results:
+        plot_indic_corr(results_df)
     return
 
 # =============================================================================
@@ -467,8 +523,8 @@ def compare_pws_prim_netw_indicator_correlations(args):
                             # prim_netw and prim_netw neighbours, if yes, keep
                             # pws
 
-
-                            if bool_prs_corr >= bool_prs_corr_prim_netw:
+                            if True:
+                                # bool_prs_corr >= bool_prs_corr_prim_netw:
 
                                 print('+++keeping pws+++')
 
@@ -488,7 +544,8 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
                                 df_results_correlations.loc[
                                     ppt_stn_id,
-                                    'prim_netw neighbor ID'] = stn_2_prim_netw
+                                    'prim_netw neighbor ID'
+                                    ] = stn_2_prim_netw
 
                                 df_results_correlations.loc[
                                     ppt_stn_id,
@@ -520,16 +577,16 @@ def compare_pws_prim_netw_indicator_correlations(args):
                                 ] = bool_prs_corr_prim_netw
                             else:
                                 pass
-                                print('---Removing pws---')
-
-                                df_results_correlations.loc[
-                                    ppt_stn_id,
-                                    'Bool_Pearson_Correlation_pws_prim_netw'
-                                ] = bool_prs_corr
-                                df_results_correlations.loc[
-                                    ppt_stn_id,
-                                    'Bool_Pearson_Correlation_prim_netw_prim_netw'
-                                ] = bool_prs_corr_prim_netw
+#                                 print('---Removing pws---')
+#
+#                                 df_results_correlations.loc[
+#                                     ppt_stn_id,
+#                                     'Bool_Pearson_Correlation_pws_prim_netw'
+#                                 ] = bool_prs_corr
+#                                 df_results_correlations.loc[
+#                                     ppt_stn_id,
+#                                     'Bool_Pearson_Correlation_prim_netw_prim_netw'
+#                                 ] = bool_prs_corr_prim_netw
 
                         else:
                             print('not enough data')
