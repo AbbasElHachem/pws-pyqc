@@ -1,7 +1,7 @@
 # pws-pyqc
   Personal Weather Station (PWS) quality control using python.
  -----------------------------------------------------------------------------------------------
-## How to cite:
+### **How to cite:**
 Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
 
 -----------------------------------------------------------------------------------------------
@@ -34,6 +34,9 @@ _02_pws_indicator_correlation_IBF.py
   2. The final result is obtained by keeping all the PWS where the correlation between PWS and 
     primary network is greater or equal to the correlation between the primary network stations.
 
+**Results**: indicator filter applied to the test_data
+
+![indic_corr_99](https://user-images.githubusercontent.com/22959071/106903818-c5200800-66fa-11eb-9efc-8e21011791c5.png)
 -----------------------------------------------------------------------------------------------
 ### Bias correction
 
@@ -50,9 +53,11 @@ _02_pws_bias_correction_BC.py
 ****Output****
   1. A dataframe for each PWS with the new data, a 'complete' new timeseries, used later on (for example in the interpolation)
  
+**Results**: example of corrected data of one PWS
+![pws_stn_70_ee_50_00_0b_40](https://user-images.githubusercontent.com/22959071/106904335-5d1df180-66fb-11eb-8937-8aaa24c43579.png)
+
 -----------------------------------------------------------------------------------------------
 ### Event based filter (EBF)
-
 
 **Corresponsing code**
 _04_event_based_filter_EBF.py
@@ -67,7 +72,10 @@ _04_event_based_filter_EBF.py
   1. A dataframe containing for every event (or timestamp) the PWS that should be flagged and
     not used for the interpolation of the corresponding event or timestep
  
+**Results** PWS stations that do not fit in the spatial neighboring are flagged
 
+![event_date_2019_10_01 15_00_00](https://user-images.githubusercontent.com/22959071/106916083-13d39f00-6707-11eb-9d9a-7f3e76367063.png)
 -----------------------------------------------------------------------------------------------
-#### Examples
------------------------------------------------------------------------------------------------
+
+### Author:
+Abbas El Hachem, department of Hydrology and Geohydrology, University of Stuttgart, Germany
