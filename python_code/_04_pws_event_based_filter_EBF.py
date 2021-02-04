@@ -22,6 +22,7 @@ Returns
 
     Corrected PWS data, save results in csv format
 """
+from win32comext.shell.demos.servers.folder_view import IDS_5ORGREATER
 
 __author__ = "Abbas El Hachem"
 __copyright__ = 'Institut fuer Wasser- und Umweltsystemmodellierung - IWS'
@@ -75,6 +76,8 @@ end_date = '%s-10-31 23:00:00' % _year
 n_workers = 7
 # =============================================================================
 
+# need to input the corrected data after the bias correction,
+# this is just a test data
 path_to_ppt_pws_data_hdf5 = (
     r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\pws_test_data.h5")
 
@@ -84,7 +87,8 @@ path_to_ppt_prim_netw_data_hdf5 = (
     r"X:\staff\elhachem\GitHub\pws-pyqc\test_data\primary_network_test_data.h5")
 assert os.path.exists(path_to_ppt_prim_netw_data_hdf5), 'wrong prim_netw file'
 
-title_ = r'second_filter_PWS_%s_new' % _year
+path_to_filtered_pws = (
+    r"X:\staff\elhachem\GitHub\pws-pyqc\test_results\remaining_pws.csv")
 
 # def out save directory
 out_save_dir = (
@@ -100,30 +104,38 @@ if not os.path.exists(out_save_dir):
 def process_manager(args):
 
     (path_to_neatmo_ppt_hdf5,
-        path_to_prim_netw_ppt_hdf5) = args
+        path_to_prim_netw_ppt_hdf5,
+        path_to_filtered_pws) = args
 
+    #=========================================================
     HDF5_pws_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
     all_pws_ids = HDF5_pws_ppt.get_all_names()
-
-    HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
-    all_prim_netw_stns_ids = HDF5_prim_netw_ppt.get_all_names()
     pws_coords = HDF5_pws_ppt.get_coordinates(all_pws_ids)
-
     pws_in_coords_df = pd.DataFrame(
         index=all_pws_ids,
         data=pws_coords['easting'], columns=['X'])
     y_pws_coords = pws_coords['northing']
     pws_in_coords_df.loc[:, 'Y'] = y_pws_coords
-    # pws_in_coords_df.index.difference(all_pws_ids)
-    prim_netw_coords = HDF5_prim_netw_ppt.get_coordinates(all_prim_netw_stns_ids)
+    pws_in_coords_df.dropna(how='all', inplace=True)
+    assert pws_in_coords_df.isna().sum().sum() == 0
+    #=========================================================
+    HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
+    all_prim_netw_stns_ids = HDF5_prim_netw_ppt.get_all_names()
 
+    prim_netw_coords = HDF5_prim_netw_ppt.get_coordinates(
+        all_prim_netw_stns_ids)
     prim_netw_in_coords_df = pd.DataFrame(
         index=all_prim_netw_stns_ids,
         data=prim_netw_coords['easting'], columns=['X'])
     y_prim_netw_coords = prim_netw_coords['northing']
     prim_netw_in_coords_df.loc[:, 'Y'] = y_prim_netw_coords
-
-    #=========================================================================
+    prim_netw_in_coords_df.dropna(how='all', inplace=True)
+    assert prim_netw_in_coords_df.isna().sum().sum() == 0
+    #=========================================================
+    # select on 'good' pws
+    ids_pws_to_use = pd.read_csv(
+        path_to_filtered_pws, index_col=0).index.to_list()
+    #=========================================================
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
     date_range_summer = pd.DatetimeIndex([date_ for date_ in date_range
                                           if date_.month not in not_convective_season])
@@ -145,7 +157,9 @@ def process_manager(args):
                             prim_netw_in_coords_df,
                             path_to_neatmo_ppt_hdf5,
                             pws_in_coords_df,
+                            ids_pws_to_use,
                             time_list,
+
                             df_save_results))
 
     my_pool = mp.Pool(processes=n_workers)
@@ -178,11 +192,13 @@ def on_evt_filter_pws(args):
      prim_netw_in_coords_df,
      path_to_neatmo_ppt_hdf5,
      pws_in_coords_df,
+     ids_pws_to_use,
      time_list,
      df_save_results) = args
 
     HDF5_pws_ppt = HDF5(infile=path_to_neatmo_ppt_hdf5)
-    all_pws_ids = HDF5_pws_ppt.get_all_names()
+#     all_pws_ids = HDF5_pws_ppt.get_all_names()
+    all_pws_ids_to_use = ids_pws_to_use
 
     HDF5_prim_netw_ppt = HDF5(infile=path_to_prim_netw_ppt_hdf5)
     all_prim_netw_ids = HDF5_prim_netw_ppt.get_all_names()
@@ -243,16 +259,12 @@ def on_evt_filter_pws(args):
         sc = plt.scatter(xstns_good, ystns_good, c=zvalues,
                          cmap=cmap_ppt,
                          marker='.', s=10, alpha=0.75, vmin=0, vmax=max_ppt,
-                         label='PWS Gd %d' % xstns_good.size)
-
-#         plt.tricontourf(xstns_good,
-#                         ystns_good, zvalues, levels=14,
-#                         cmap=plt.get_cmap('jet_r'))
+                         label='PWS Good %d' % xstns_good.size)
 
         plt.scatter(xstns_bad, ystns_bad,
                     alpha=0.75, c=zvalues_bad, cmap=cmap_ppt_bad,
-                    marker='x', s=10, vmin=0, vmax=max_ppt,
-                    label='PWS Bd %d' % xstns_bad.size)
+                    marker='X', s=20, vmin=0, vmax=max_ppt,
+                    label='PWS Bad %d' % xstns_bad.size)
         # plt.show()
         plt.xlabel('X [m]')
         plt.ylabel('Y [m]')
@@ -263,9 +275,11 @@ def on_evt_filter_pws(args):
         cbar.ax.set_ylabel('[mm/hr]')
         plt.title('Event date %s ' % (event_date))
         plt.grid(alpha=0.25)
-        plt.savefig(os.path.join(out_save_dir,
-                                 'event_date_%s.png'
-                                 % (str(event_date).replace('-', '_').replace(':', '_'))))
+        plt.savefig(os.path.join(
+                out_save_dir,
+                 'event_date_%s.png'
+                 % (str(event_date
+                        ).replace('-', '_').replace(':', '_'))))
         plt.close()
 
     #==========================================================================
@@ -277,75 +291,75 @@ def on_evt_filter_pws(args):
         print(ix, '/', len(time_list), '--', date_to_correct)
         # pws_data = pd.read_feather(path_netatamo_edf_fk, columns=pws_ids_str)
         pws_data_evt = HDF5_pws_ppt.get_pandas_dataframe_for_date(
-            ids=all_pws_ids, event_date=date_to_correct).dropna(how='all', axis=1)
+            ids=all_pws_ids_to_use,
+             event_date=date_to_correct).dropna(how='all', axis=1)
 
         if len(pws_data_evt.columns) > 0:
             pws_stns_evt = pws_data_evt.columns.to_list()
-
+            cmn_pws_event = pws_in_coords_df.index.intersection(
+                pws_stns_evt)
             # coords of stns to correct
             xstns_interp = pws_in_coords_df.loc[
-                pws_stns_evt, 'X'].values.ravel()
+                cmn_pws_event, 'X'].values.ravel()
             ystns_interp = pws_in_coords_df.loc[
-                pws_stns_evt, 'Y'].values.ravel()
-
+                cmn_pws_event, 'Y'].values.ravel()
+            cmn_pws_data_evt = pws_data_evt.loc[:, cmn_pws_event]
             # prim_netw data
-            ppt_prim_netw_vals_evt = HDF5_prim_netw_ppt.get_pandas_dataframe_for_date(
-                ids=all_prim_netw_ids, event_date=date_to_correct)
+            ppt_prim_netw_vals_evt = (
+                HDF5_prim_netw_ppt.get_pandas_dataframe_for_date(
+                ids=all_prim_netw_ids, event_date=date_to_correct))
             prim_netw_stns_evt = ppt_prim_netw_vals_evt.columns.to_list()
 
-            prim_netw_xcoords = prim_netw_in_coords_df.loc[
-                prim_netw_stns_evt, 'X'].values.ravel()
-            prim_netw_ycoords = prim_netw_in_coords_df.loc[
-                prim_netw_stns_evt, 'Y'].values.ravel()
+            cmn_prim_netw_stns_evt = prim_netw_in_coords_df.index.intersection(
+                prim_netw_stns_evt)
 
-#             vg_scaling_ratio = scale_vg_based_on_prim_netw_ppt(
-#                 ppt_prim_netw_vals=ppt_prim_netw_vals_evt.values.ravel(),
-#                 vg_sill_b4_scale=vg_sill_b4_scale)
+            prim_netw_xcoords = prim_netw_in_coords_df.loc[
+                cmn_prim_netw_stns_evt, 'X'].values.ravel()
+            prim_netw_ycoords = prim_netw_in_coords_df.loc[
+                cmn_prim_netw_stns_evt, 'Y'].values.ravel()
+            # primary network values for event
+            cmn_ppt_prim_netw_vals_evt = ppt_prim_netw_vals_evt.loc[
+                :, cmn_prim_netw_stns_evt]
+            # scale variogram
             vgs_model_dwd_ppt = scale_vg_based_on_prim_netw_ppt(
             ppt_prim_netw_vals_evt.values, vg_sill_b4_scale)
+
             # start kriging pws location
-#             OK_prim_netw_pws_crt = OKpy(
-#                 prim_netw_xcoords, prim_netw_ycoords,
-#                 ppt_prim_netw_vals_evt.values,
-#                 variogram_model=vg_model_str,
-#                 variogram_parameters={
-#                     'sill': vg_scaling_ratio,
-#                     'range': vg_range,
-#                     'nugget': 0})
             OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
                                             yi=prim_netw_ycoords,
-                                            zi=ppt_prim_netw_vals_evt.values,
-                                            xk=np.array([xstns_interp]),
-                                            yk=np.array([ystns_interp]),
+                                            zi=cmn_ppt_prim_netw_vals_evt.values.ravel(),
+                                            xk=xstns_interp,
+                                            yk=ystns_interp,
                                             model=vgs_model_dwd_ppt)
-            # sigma = _
             try:
-                zvalues, est_var = OK_prim_netw_pws_crt.execute(
-                    'points', np.array([xstns_interp]), np.array([ystns_interp]))
+                OK_prim_netw_pws_crt.krige()
+                zvalues = OK_prim_netw_pws_crt.zk.copy()
+
+                # calcualte standard deviation of estimated values
+                std_est_vals = np.sqrt(OK_prim_netw_pws_crt.est_vars)
             except Exception as msg:
                 print('ror', msg)
 
-            zvalues = np.round(zvalues.data, 2)
             # if neg assign 0
             zvalues[zvalues < 0] = 0
             # calcualte standard deviation of estimated values
-            std_est_vals = np.sqrt(est_var).data
+
             # calculate difference observed and estimated
             # values
-            diff_obsv_interp = np.abs(pws_data_evt.values - zvalues)
+            diff_obsv_interp = np.abs(cmn_pws_data_evt.values - zvalues)
 
             idx_good_stns = np.where(
                 diff_obsv_interp <= 3 * std_est_vals)[1]
             idx_bad_stns = np.where(
                 diff_obsv_interp > 3 * std_est_vals)[1]
 
-            if len(idx_bad_stns) or len(idx_good_stns) > 0:
+            if len(idx_bad_stns) > 0:
 
                 # use additional filter
                 try:
-                    ids_pws_stns_gd = np.take(pws_stns_evt,
+                    ids_pws_stns_gd = np.take(cmn_pws_event,
                                                   idx_good_stns).ravel()
-                    ids_pws_stns_bad = np.take(pws_stns_evt,
+                    ids_pws_stns_bad = np.take(cmn_pws_event,
                                                    idx_bad_stns).ravel()
 
                 except Exception as msg:
@@ -378,9 +392,9 @@ def on_evt_filter_pws(args):
 #                 plt.scatter(prim_netw_xcoords, prim_netw_ycoords, c='g')
 #                 plt.scatter(xstns_bad, ystns_bad, c='r')
 #                 plt.show()
-                if len(idx_bad_stns) > 0 or len(idx_good_stns) > 0:
+                if len(idx_bad_stns) > 0 > 0:
                     for stn_ix, stn_bad in zip(idx_bad_stns, ids_pws_stns_bad):
-                        ppt_bad = pws_data_evt.loc[:, stn_bad].values
+                        ppt_bad = cmn_pws_data_evt.loc[:, stn_bad].values
                         # print('ppt_bad', ppt_bad)
                         if ppt_bad >= 0.:
 
@@ -394,22 +408,24 @@ def on_evt_filter_pws(args):
 
                             ids_neighbours = ids_pws_stns_gd[idxs_neighbours]
                             ids_neighbours_evt = np.in1d(
-                                pws_stns_evt, ids_neighbours)
+                                cmn_pws_event, ids_neighbours)
 
                             idxs_neighbours_prim_netw = points_tree_prim_netw.query_ball_point(
                                 np.array((xstn_bd, ystn_bd)), 1e4)
 
                             ids_neighbours_prim_netw_evt = np.array(
-                                prim_netw_stns_evt)[idxs_neighbours_prim_netw]
+                                cmn_prim_netw_stns_evt)[idxs_neighbours_prim_netw]
 
                             if len(ids_neighbours_evt) > 0:
-                                ppt_pws_ngbrs = pws_data_evt.loc[:,
+                                ppt_pws_ngbrs = cmn_pws_data_evt.loc[:,
                                                                          ids_neighbours_evt]
                                 ppt_pws_data = ppt_pws_ngbrs.values
-                                xstn_ngbr = pws_in_coords_df.loc[
-                                    ppt_pws_ngbrs.columns, 'X'].values.ravel()
-                                ystn_ngbr = pws_in_coords_df.loc[
-                                    ppt_pws_ngbrs.columns, 'Y'].values.ravel()
+                                #---------------------------------------------
+                                # xstn_ngbr = pws_in_coords_df.loc[
+                                #     ppt_pws_ngbrs.columns, 'X'].values.ravel()
+                                # ystn_ngbr = pws_in_coords_df.loc[
+                                #     ppt_pws_ngbrs.columns, 'Y'].values.ravel()
+                                #---------------------------------------------
 
                                 if ppt_pws_data.size == 0:
                                     ppt_pws_data = 1000
@@ -417,13 +433,15 @@ def on_evt_filter_pws(args):
                                 ppt_pws_data = 1000
 
                             if len(ids_neighbours_prim_netw_evt) > 0:
-                                ppt_prim_netw_ngbrs = ppt_prim_netw_vals_evt.loc[:,
+                                ppt_prim_netw_ngbrs = cmn_ppt_prim_netw_vals_evt.loc[:,
                                                                      ids_neighbours_prim_netw_evt]
                                 ppt_prim_netw_data = ppt_prim_netw_ngbrs.values
-                                prim_netw_xstn_ngbr = prim_netw_in_coords_df.loc[
-                                    ppt_prim_netw_ngbrs.columns, 'X'].values.ravel()
-                                prim_netw_ystn_ngbr = prim_netw_in_coords_df.loc[
-                                    ppt_prim_netw_ngbrs.columns, 'Y'].values.ravel()
+                                #---------------------------------------------
+                                # prim_netw_xstn_ngbr = prim_netw_in_coords_df.loc[
+                                #     ppt_prim_netw_ngbrs.columns, 'X'].values.ravel()
+                                # prim_netw_ystn_ngbr = prim_netw_in_coords_df.loc[
+                                #     ppt_prim_netw_ngbrs.columns, 'Y'].values.ravel()
+                                #---------------------------------------------
 
 #                                 plt.ioff()
 #                                 plt.scatter(xstn_bd, ystn_bd, c='r')
@@ -488,28 +506,28 @@ def on_evt_filter_pws(args):
                     continue
 
                 try:
-                    zvalues_good = pws_data_evt.loc[date_to_correct,
+                    zvalues_good = cmn_pws_data_evt.loc[date_to_correct,
                                                         ids_pws_stns_gd_final].values.ravel()
-                    zvalues_bad = pws_data_evt.loc[date_to_correct,
+                    zvalues_bad = cmn_pws_data_evt.loc[date_to_correct,
                                                        ids_pws_stns_bad_final].values.ravel()
 
                     # plot configuration
                     max_ppt = max(np.nanmax(zvalues_good),
-                                  np.nanmax(ppt_prim_netw_vals_evt.values.ravel()))
+                                  np.nanmax(cmn_ppt_prim_netw_vals_evt.values.ravel()))
                     if max_ppt >= 0:
                         print('plotting map')
                         plot_good_bad_stns(pws_in_coords_df,
                                            ids_pws_stns_gd_final,
                                            ids_pws_stns_bad_final,
                                            zvalues_good,
-                                           ppt_prim_netw_vals_evt.values.ravel(),
+                                           cmn_ppt_prim_netw_vals_evt.values.ravel(),
                                            zvalues_bad,
                                            prim_netw_xcoords, prim_netw_ycoords,
                                            date_to_correct)
                         plt.close()
                 except Exception as msg2:
                     print('error plotting ', msg2)
-
+#         break
     df_save_results.dropna(how='all', inplace=True)
 
     return df_save_results
@@ -523,7 +541,8 @@ if __name__ == '__main__':
 
     args = (
         path_to_ppt_pws_data_hdf5,
-        path_to_ppt_prim_netw_data_hdf5)
+        path_to_ppt_prim_netw_data_hdf5,
+        path_to_filtered_pws)
 
     process_manager(args)
 

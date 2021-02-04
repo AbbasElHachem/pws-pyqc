@@ -135,7 +135,7 @@ n_workers = 5
 out_save_dir_orig = (
     r"X:\staff\elhachem\GitHub\pws-pyqc\test_results")
 
-plot_results = True
+plot_save_results_df = True
 
 if not os.path.exists(out_save_dir_orig):
     os.mkdir(out_save_dir_orig)
@@ -167,6 +167,13 @@ def plot_indic_corr(df_results):
     y_pws_keep = df_results.loc[ids_pws_keep,
                                'Bool_Pearson_Correlation_pws_prim_netw'
                                ].dropna().values.ravel()
+
+    pws_to_keep = pd.DataFrame(
+        index=ids_pws_keep)
+    pws_to_keep.to_csv(os.path.join(
+        out_save_dir_orig, 'remaining_pws.csv'),
+    sep=';')
+
     max_x = np.nanmax(x0_pws_all)
 
     plt.ioff()
@@ -287,7 +294,7 @@ def process_manager(args):
                      'indic_corr_filter.csv'),
         sep=';', float_format='%0.2f')
 
-    if plot_results:
+    if plot_save_results_df:
         plot_indic_corr(results_df)
     return
 
@@ -630,6 +637,8 @@ if __name__ == '__main__':
             for neighbor_to_chose in neighbors_to_chose_lst:
                 print('\n********\n prim_netw Neighbor is', neighbor_to_chose)
 
+#                 path_to_df_correlations = os.path.join(
+#                     out_save_dir_orig, 'remaining_pws.csv')
                 path_to_df_correlations = ''
                 if (not os.path.exists(path_to_df_correlations)):
 
@@ -645,6 +654,7 @@ if __name__ == '__main__':
 
                     process_manager(args)
                 else:
+
                     print('\n Data frames exist, not creating them\n')
 
     STOP = timeit.default_timer()  # Ending time
