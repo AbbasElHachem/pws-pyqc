@@ -76,6 +76,3 @@ _04_event_based_filter_EBF.py
 
 ![event_date_2019_10_01 15_00_00](https://user-images.githubusercontent.com/22959071/106916083-13d39f00-6707-11eb-9d9a-7f3e76367063.png)
 -----------------------------------------------------------------------------------------------
-
-### Author:
-Abbas El Hachem, department of Hydrology and Geohydrology, University of Stuttgart, Germany
