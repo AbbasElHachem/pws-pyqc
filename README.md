@@ -18,7 +18,7 @@ The three main codes corresponding to the IBF, Bias correction and EBF are avail
 -----------------------------------------------------------------------------------------------
 ### Indicator based Filter IBF
 
-
+![indic_corr][test_results/indic_corr_99.png]
 **Corresponsing code**
 _02_pws_indicator_correlation_IBF.py
 
