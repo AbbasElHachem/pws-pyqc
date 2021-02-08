@@ -69,7 +69,7 @@ import pandas as pd
 import multiprocessing as mp
 
 from scipy.spatial import cKDTree
-from scipy.stats import pearsonr as prs
+from scipy.stats import spearmanr as spr
 import matplotlib.pyplot as plt
 # own functions from script _00_functions
 from _00_functions import (
@@ -146,38 +146,39 @@ def plot_indic_corr(df_results):
     ''' plot the indicator correlation value before and after the filtering'''
     df_results.dropna(how='all', inplace=True)
     y0_prim_netw = df_results.loc[
-        :, 'Bool_Pearson_Correlation_prim_netw_prim_netw'].values.ravel()
+        :, 'Bool_Spearman_Correlation_prim_netw_prim_netw'].values.ravel()
 
     x0_pws_all = df_results.loc[:, 'Distance to neighbor'].values.ravel()
-    y0_pws_all = df_results.loc[:, 'Bool_Pearson_Correlation_pws_prim_netw'
+    y0_pws_all = df_results.loc[:, 'Bool_Spearman_Correlation_pws_prim_netw'
                                 ].values.ravel()
     assert y0_prim_netw.shape == y0_pws_all.shape
     ix_pws_keep = np.where(y0_pws_all >= y0_prim_netw)[0]
-    ix_0_corr = np.where(y0_pws_all >= 0.6)[0]
+    #ix_pws_abv_thr = np.where(y0_pws_all >= 0.6)[0]
+    ix_0_corr = np.where(y0_pws_all > 0)[0]
     ix_1_corr = np.where(y0_pws_all < 1)[0]
 
     ix_pws_keep_final = np.intersect1d(
-        np.intersect1d(ix_pws_keep, ix_0_corr), ix_1_corr)
+        ix_pws_keep, np.intersect1d(ix_0_corr, ix_1_corr))
     ids_pws_keep = df_results.iloc[ix_pws_keep_final, :].index.to_list()
     print('keeping', len(ids_pws_keep), '/', y0_pws_all.size)
     x_pws_keep = df_results.loc[ids_pws_keep,
-                               'Distance to neighbor'].dropna().values.ravel()
+                                'Distance to neighbor'].dropna().values.ravel()
     y_pws_keep = df_results.loc[ids_pws_keep,
-                               'Bool_Pearson_Correlation_pws_prim_netw'
-                               ].dropna().values.ravel()
+                                'Bool_Spearman_Correlation_pws_prim_netw'
+                                ].dropna().values.ravel()
     # save the results in a dataframe
     pws_to_keep = pd.DataFrame(
         index=ids_pws_keep)
     pws_to_keep.to_csv(os.path.join(
         out_save_dir_orig, 'remaining_pws.csv'),
-    sep=';')
+        sep=';')
 
     max_x = np.nanmax(x0_pws_all)
 
     plt.ioff()
 
     _, axs = plt.subplots(1, 1, sharex=True, sharey=True,
-                            figsize=(12, 8), dpi=100)
+                          figsize=(12, 8), dpi=100)
 
     axs.scatter(x0_pws_all, y0_pws_all, c='b',
                 alpha=0.65, marker='.', s=50,
@@ -198,16 +199,15 @@ def plot_indic_corr(df_results):
     axs.grid(alpha=.25)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(out_save_dir_orig ,
-            r'indic_corr_99.png'),
-            papertype='a4',
-            bbox_inches='tight', pad_inches=.2)
+    plt.savefig(os.path.join(out_save_dir_orig,
+                             r'indic_corr_99.png'),
+                papertype='a4',
+                bbox_inches='tight', pad_inches=.2)
     plt.close()
     return
 
 
 def process_manager(args):
-
     ''' Function giving parameters to each subprocess'''
     (path_pws_ppt_df_hdf5,
         path_to_prim_netw_data_hdf5,
@@ -363,7 +363,8 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
             if pws_ppt_season.size > min_req_ppt_vals:
 
-                # find distance to all prim_netw stations, sort them, select minimum
+                # find distance to all prim_netw stations, sort them, select
+                # minimum
                 (xpws, ynetamto) = (
                     in_pws_df_coords_utm32.loc[ppt_stn_id, 'X'],
                     in_pws_df_coords_utm32.loc[ppt_stn_id, 'Y'])
@@ -381,13 +382,13 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
                 if min_dist_ppt_prim_netw <= min_dist_thr_ppt:
 
-                    # check if prim_netw station is near, select and read prim_netw stn
+                    # check if prim_netw station is near, select and read
+                    # prim_netw stn
                     try:
                         df_prim_netw_orig = HDF5_prim_netw.get_pandas_dataframe(
                             stn_2_prim_netw)
                     except Exception as msg:
                         print('error reading prim_netw', msg)
-
 
                     df_prim_netw_orig.dropna(axis=0, inplace=True)
 
@@ -409,8 +410,8 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
                     distances_prim_netw, indices_prim_netw = (
                         prim_netw_points_tree.query(
-                        np.array([xprim_netw, yprim_netw]),
-                        k=5))
+                            np.array([xprim_netw, yprim_netw]),
+                            k=5))
                     # +1 to get neighbor not same stn
                     stn_near_prim_netw = prim_netw_stns_ids[
                         indices_prim_netw[neighbor_to_chose + 1]]
@@ -443,7 +444,6 @@ def compare_pws_prim_netw_indicator_correlations(args):
                         cmn_idx = pws_ppt_season.index.intersection(
                             df_prim_netw_ngbr.index).intersection(
                                 df_prim_netw_orig.index)
-
 
                         if cmn_idx.size > min_req_ppt_vals:
 
@@ -496,11 +496,11 @@ def compare_pws_prim_netw_indicator_correlations(args):
                                 df_prim_netw_cmn_season > prim_netw_ppt_thr_per
                             ).astype(int)
 
-                            # calculate pearson correlations of booleans 1, 0
+                            # calculate spearman correlations of booleans 1, 0
 
-                            bool_prs_corr = np.round(
-                                prs(df_prim_netw_cmn_Bool.values.ravel(),
-                                      df_pws_cmn_Bool.values.ravel())[0], 2)
+                            bool_spr_corr = np.round(
+                                spr(df_prim_netw_cmn_Bool.values.ravel(),
+                                    df_pws_cmn_Bool.values.ravel())[0], 2)
 
                             #======================================
                             # select only upper tail both dataframes
@@ -508,8 +508,8 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
                             prim_netw2_cdf_x, prim_netw2_cdf_y = (
                                 get_cdf_part_abv_thr(
-                                df_prim_netw_ngbr_season.values, -0.1)
-                                )
+                                    df_prim_netw_ngbr_season.values, -0.1)
+                            )
 
                             # get prim_netw2 ppt thr from cdf
                             prim_netw2_ppt_thr_per = prim_netw2_cdf_x[np.where(
@@ -519,12 +519,12 @@ def compare_pws_prim_netw_indicator_correlations(args):
                                 df_prim_netw_ngbr_season > prim_netw2_ppt_thr_per
                             ).astype(int)
 
-                            # calculate pearson correlations of booleans
+                            # calculate spearman correlations of booleans
                             # 1, 0
 
-                            bool_prs_corr_prim_netw = np.round(
-                                prs(df_prim_netw_cmn_Bool.values.ravel(),
-                                      df_prim_netw2_cmn_Bool.values.ravel())[0], 2)
+                            bool_spr_corr_prim_netw = np.round(
+                                spr(df_prim_netw_cmn_Bool.values.ravel(),
+                                    df_prim_netw2_cmn_Bool.values.ravel())[0], 2)
 
                             # check if df_prim_netw2_cmn_Bool correlation between
                             # pws and prim_netw is higher than between
@@ -532,7 +532,7 @@ def compare_pws_prim_netw_indicator_correlations(args):
                             # pws
 
                             if True:
-                                # bool_prs_corr >= bool_prs_corr_prim_netw:
+                                # bool_prs_corr >= bool_spr_corr_prim_netw:
 
                                 print('+++keeping pws+++')
 
@@ -553,12 +553,12 @@ def compare_pws_prim_netw_indicator_correlations(args):
                                 df_results_correlations.loc[
                                     ppt_stn_id,
                                     'prim_netw neighbor ID'
-                                    ] = stn_2_prim_netw
+                                ] = stn_2_prim_netw
 
                                 df_results_correlations.loc[
                                     ppt_stn_id,
                                     'prim_netw-prim_netw neighbor ID'
-                                    ] = stn_near_prim_netw
+                                ] = stn_near_prim_netw
 
                                 df_results_correlations.loc[
                                     ppt_stn_id,
@@ -577,12 +577,12 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
                                 df_results_correlations.loc[
                                     ppt_stn_id,
-                                    'Bool_Pearson_Correlation_pws_prim_netw'
-                                ] = bool_prs_corr
+                                    'Bool_Spearman_Correlation_pws_prim_netw'
+                                ] = bool_spr_corr
                                 df_results_correlations.loc[
                                     ppt_stn_id,
-                                    'Bool_Pearson_Correlation_prim_netw_prim_netw'
-                                ] = bool_prs_corr_prim_netw
+                                    'Bool_Spearman_Correlation_prim_netw_prim_netw'
+                                ] = bool_spr_corr_prim_netw
                             else:
                                 pass
 #                                 print('---Removing pws---')
@@ -611,7 +611,6 @@ def compare_pws_prim_netw_indicator_correlations(args):
 
         except Exception as msg:
             print('error while finding neighbours ', msg)
-
 
             continue
 
@@ -645,7 +644,7 @@ if __name__ == '__main__':
 
                     print('\n Data frames do not exist, creating them\n')
 
-                    args = (# path_to_pws_coords_utm32,
+                    args = (  # path_to_pws_coords_utm32,
                         # path_to_prim_netw_coords_utm32,
                         path_to_ppt_pws_data_hdf5,
                         path_to_ppt_prim_netw_data_hdf5,
@@ -661,4 +660,3 @@ if __name__ == '__main__':
     STOP = timeit.default_timer()  # Ending time
     print(('\n****Done with everything on %s.\nTotal run time was'
            ' about %0.4f seconds ***' % (time.asctime(), STOP - START)))
-
