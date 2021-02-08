@@ -1,4 +1,4 @@
-;Distance to neighbor;prim_netw neighbor ID;prim_netw-prim_netw neighbor ID;Distance prim_netw-prim_netw neighbor;pws_99.0_Per_ppt_thr;prim_netw_99.0_Per_ppt_thr;Bool_Pearson_Correlation_pws_prim_netw;Bool_Pearson_Correlation_prim_netw_prim_netw
+;Distance to neighbor;prim_netw neighbor ID;prim_netw-prim_netw neighbor ID;Distance prim_netw-prim_netw neighbor;pws_99.0_Per_ppt_thr;prim_netw_99.0_Per_ppt_thr;Bool_Spearman_Correlation_pws_prim_netw;Bool_Spearman_Correlation_prim_netw_prim_netw
 70_ee_50_00_0b_40;31872.58;P03904;P03263;19977.92;2.22;1.95;0.35;0.41
 70_ee_50_00_0c_56;1145.41;P05100;P05099;3670.65;1.01;2.04;0.77;0.80
 70_ee_50_00_0c_6a;25294.52;P03904;P03263;19977.92;1.42;2.22;0.38;0.43
@@ -1843,6 +1843,7 @@
 70_ee_50_52_f9_78;6234.17;P05733;P00554;17582.34;3.03;1.98;0.60;0.39
 70_ee_50_52_f9_b0;10778.13;P05064;P07344;16948.25;2.52;1.62;0.50;0.54
 70_ee_50_53_00_42;35881.96;P03904;P03263;19977.92;1.82;1.95;0.21;0.39
+70_ee_50_53_16_d4;12335.97;P00617;P04150;15650.16;6.06;1.17;;
 70_ee_50_53_1f_aa;32719.21;P15000;P02473;26907.47;2.02;2.06;0.30;0.45
 70_ee_50_53_3e_28;9271.50;P00617;P04150;15650.16;1.61;1.35;0.50;0.50
 70_ee_50_53_42_9e;14021.46;P03591;P02497;20563.21;1.58;1.83;0.41;0.45
