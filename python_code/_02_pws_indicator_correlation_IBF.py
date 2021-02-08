@@ -153,7 +153,7 @@ def plot_indic_corr(df_results):
                                 ].values.ravel()
     assert y0_prim_netw.shape == y0_pws_all.shape
     ix_pws_keep = np.where(y0_pws_all >= y0_prim_netw)[0]
-    ix_0_corr = np.where(y0_pws_all > 0)[0]
+    ix_0_corr = np.where(y0_pws_all >= 0.6)[0]
     ix_1_corr = np.where(y0_pws_all < 1)[0]
 
     ix_pws_keep_final = np.intersect1d(
