@@ -79,3 +79,8 @@ _04_event_based_filter_EBF.py
 
 ![event_date_2019_10_01 15_00_00](https://user-images.githubusercontent.com/22959071/106916083-13d39f00-6707-11eb-9d9a-7f3e76367063.png)
 -----------------------------------------------------------------------------------------------
+
+### Credit:
+The precipitation data was downloaded from the German Weather Service (DWD) open data server which can be found under the following link: https://opendata.dwd.de/climate_environment/CDC/
+
+The PWS data were downloaded using the Netatmo API: https://dev.netatmo.com/
