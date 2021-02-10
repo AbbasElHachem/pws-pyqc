@@ -40,6 +40,9 @@ _02_pws_indicator_correlation_IBF.py
 **Results**: indicator filter applied to the test_data
 
 ![indic_corr_99](https://user-images.githubusercontent.com/22959071/106903818-c5200800-66fa-11eb-9efc-8e21011791c5.png)
+
+**Note**: the present code is slighty different than the one in the original paper. A similar code will be uploaded soon.
+
 -----------------------------------------------------------------------------------------------
 ### Bias correction
 
