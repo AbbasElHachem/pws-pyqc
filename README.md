@@ -87,3 +87,6 @@ _04_event_based_filter_EBF.py
 The precipitation data was downloaded from the German Weather Service (DWD) open data server which can be found under the following link: https://opendata.dwd.de/climate_environment/CDC/
 
 The PWS data were downloaded using the Netatmo API: https://dev.netatmo.com/
+
+### Note:
+In the bias correction and event based filter an Ordinary Kriging implementation is used. This has not been yet uploaded but could be easily subtituted by the PyKrige code (10.5281/zenodo.3738604).
