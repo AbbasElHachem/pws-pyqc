@@ -5,7 +5,7 @@
 https://doi.org/10.5281/zenodo.4501920
 
 ### Reference paper:
-Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observation for improving precipitation estimation and interpolation, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2020-42, in review, 2020. 
+Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observations to improve precipitation estimation and interpolation, Hydrol. Earth Syst. Sci., 25, 583–601, https://doi.org/10.5194/hess-25-583-2021, 2021.
 
 -----------------------------------------------------------------------------------------------
 ### Main Procedure
@@ -40,6 +40,9 @@ _02_pws_indicator_correlation_IBF.py
 **Results**: indicator filter applied to the test_data
 
 ![indic_corr_99](https://user-images.githubusercontent.com/22959071/106903818-c5200800-66fa-11eb-9efc-8e21011791c5.png)
+
+**Note**: the present code is slighty different than the one in the original paper. A similar code will be uploaded soon.
+
 -----------------------------------------------------------------------------------------------
 ### Bias correction
 
@@ -79,3 +82,11 @@ _04_event_based_filter_EBF.py
 
 ![event_date_2019_10_01 15_00_00](https://user-images.githubusercontent.com/22959071/106916083-13d39f00-6707-11eb-9d9a-7f3e76367063.png)
 -----------------------------------------------------------------------------------------------
+
+### Credit:
+The precipitation data was downloaded from the German Weather Service (DWD) open data server which can be found under the following link: https://opendata.dwd.de/climate_environment/CDC/
+
+The PWS data were downloaded using the Netatmo API: https://dev.netatmo.com/
+
+### Note:
+In the bias correction and event based filter an Ordinary Kriging implementation is used. This has not been yet uploaded but could be easily subtituted by the PyKrige code (10.5281/zenodo.3738604).
