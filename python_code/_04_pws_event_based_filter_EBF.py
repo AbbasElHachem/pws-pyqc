@@ -51,7 +51,8 @@ from pathlib import Path
 
 from matplotlib.colors import LinearSegmentedColormap
 
-from spinterps import OrdinaryKriging as OKpy
+# from spinterps import OrdinaryKriging as OKpy
+from pykrige.ok import OrdinaryKriging as OKpy
 
 from _01_read_hdf5 import HDF5
 
@@ -205,7 +206,7 @@ def on_evt_filter_pws(args):
 
     def scale_vg_based_on_prim_netw_ppt(ppt_dwd_vals, vg_sill_b4_scale):
         # sacle variogram based on dwd ppt
-#         vg_sill = float(vg_model_to_scale.split(" ")[0])
+        #         vg_sill = float(vg_model_to_scale.split(" ")[0])
         dwd_vals_var = np.var(ppt_dwd_vals)
         vg_scaling_ratio = dwd_vals_var / vg_sill_b4_scale
 
@@ -276,10 +277,10 @@ def on_evt_filter_pws(args):
         plt.title('Event date %s ' % (event_date))
         plt.grid(alpha=0.25)
         plt.savefig(os.path.join(
-                out_save_dir,
-                 'event_date_%s.png'
-                 % (str(event_date
-                        ).replace('-', '_').replace(':', '_'))))
+            out_save_dir,
+            'event_date_%s.png'
+            % (str(event_date
+                   ).replace('-', '_').replace(':', '_'))))
         plt.close()
 
     #==========================================================================
@@ -292,7 +293,7 @@ def on_evt_filter_pws(args):
         # pws_data = pd.read_feather(path_netatamo_edf_fk, columns=pws_ids_str)
         pws_data_evt = HDF5_pws_ppt.get_pandas_dataframe_for_date(
             ids=all_pws_ids_to_use,
-             event_date=date_to_correct).dropna(how='all', axis=1)
+            event_date=date_to_correct).dropna(how='all', axis=1)
 
         if len(pws_data_evt.columns) > 0:
             pws_stns_evt = pws_data_evt.columns.to_list()
@@ -307,7 +308,7 @@ def on_evt_filter_pws(args):
             # prim_netw data
             ppt_prim_netw_vals_evt = (
                 HDF5_prim_netw_ppt.get_pandas_dataframe_for_date(
-                ids=all_prim_netw_ids, event_date=date_to_correct))
+                    ids=all_prim_netw_ids, event_date=date_to_correct))
             prim_netw_stns_evt = ppt_prim_netw_vals_evt.columns.to_list()
 
             cmn_prim_netw_stns_evt = prim_netw_in_coords_df.index.intersection(
@@ -322,21 +323,39 @@ def on_evt_filter_pws(args):
                 :, cmn_prim_netw_stns_evt]
             # scale variogram
             vgs_model_dwd_ppt = scale_vg_based_on_prim_netw_ppt(
-            ppt_prim_netw_vals_evt.values, vg_sill_b4_scale)
+                ppt_prim_netw_vals_evt.values, vg_sill_b4_scale)
 
             # start kriging pws location
-            OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
-                                            yi=prim_netw_ycoords,
-                                            zi=cmn_ppt_prim_netw_vals_evt.values.ravel(),
-                                            xk=xstns_interp,
-                                            yk=ystns_interp,
-                                            model=vgs_model_dwd_ppt)
+#             OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
+#                                         yi=prim_netw_ycoords,
+#                                         zi=cmn_ppt_prim_netw_vals_evt.values.ravel(),
+#                                         xk=xstns_interp,
+#                                         yk=ystns_interp,
+#                                         model=vgs_model_dwd_ppt)
+            # using PYkrige
+            dwd_vals_var = np.var(cmn_ppt_prim_netw_vals_evt.values)
+            vg_scaling_ratio = dwd_vals_var / vg_sill_b4_scale
+#
+            if vg_scaling_ratio == 0:
+                vg_scaling_ratio = vg_sill_b4_scale
+            OK_prim_netw_pws_crt = OKpy(
+                prim_netw_xcoords, prim_netw_ycoords,
+                cmn_ppt_prim_netw_vals_evt.values.ravel(),
+                variogram_model=vg_model_str,
+                variogram_parameters={
+                    'sill': vg_scaling_ratio,
+                    'range': vg_range,
+                    'nugget': 0})
             try:
-                OK_prim_netw_pws_crt.krige()
-                zvalues = OK_prim_netw_pws_crt.zk.copy()
+                #                 OK_prim_netw_pws_crt.krige()
+                #                 zvalues = OK_prim_netw_pws_crt.zk.copy()
+                #
+                #                 # calcualte standard deviation of estimated values
+                #                 std_est_vals = np.sqrt(OK_prim_netw_pws_crt.est_vars)
 
-                # calcualte standard deviation of estimated values
-                std_est_vals = np.sqrt(OK_prim_netw_pws_crt.est_vars)
+                zvalues, est_var = OK_prim_netw_pws_crt.execute(
+                    'points', np.array([xstns_interp]),  np.array([ystns_interp]))
+                std_est_vals = np.sqrt(est_var).data
             except Exception as msg:
                 print('ror', msg)
 
@@ -358,9 +377,9 @@ def on_evt_filter_pws(args):
                 # use additional filter
                 try:
                     ids_pws_stns_gd = np.take(cmn_pws_event,
-                                                  idx_good_stns).ravel()
+                                              idx_good_stns).ravel()
                     ids_pws_stns_bad = np.take(cmn_pws_event,
-                                                   idx_bad_stns).ravel()
+                                               idx_bad_stns).ravel()
 
                 except Exception as msg:
                     print(msg)
@@ -385,7 +404,8 @@ def on_evt_filter_pws(args):
                 neighbors_coords_prim_netw = np.array(
                     [(x, y) for x, y in zip(prim_netw_xcoords, prim_netw_ycoords)])
 
-                points_tree_prim_netw = spatial.cKDTree(neighbors_coords_prim_netw)
+                points_tree_prim_netw = spatial.cKDTree(
+                    neighbors_coords_prim_netw)
 
 #                 plt.ioff()
 #                 plt.scatter(xstns_good, ystns_good, c='b')
@@ -418,7 +438,7 @@ def on_evt_filter_pws(args):
 
                             if len(ids_neighbours_evt) > 0:
                                 ppt_pws_ngbrs = cmn_pws_data_evt.loc[:,
-                                                                         ids_neighbours_evt]
+                                                                     ids_neighbours_evt]
                                 ppt_pws_data = ppt_pws_ngbrs.values
                                 #---------------------------------------------
                                 # xstn_ngbr = pws_in_coords_df.loc[
@@ -434,7 +454,7 @@ def on_evt_filter_pws(args):
 
                             if len(ids_neighbours_prim_netw_evt) > 0:
                                 ppt_prim_netw_ngbrs = cmn_ppt_prim_netw_vals_evt.loc[:,
-                                                                     ids_neighbours_prim_netw_evt]
+                                                                                     ids_neighbours_prim_netw_evt]
                                 ppt_prim_netw_data = ppt_prim_netw_ngbrs.values
                                 #---------------------------------------------
                                 # prim_netw_xstn_ngbr = prim_netw_in_coords_df.loc[

@@ -60,18 +60,18 @@ import multiprocessing as mp
 
 from scipy.spatial import cKDTree
 
-from spinterps import OrdinaryKriging as OKpy
-
+# from spinterps import OrdinaryKriging as OKpy
+from pykrige.ok import OrdinaryKriging as OKpy
 # own Libs
 
 from _00_functions import (
     select_convective_season,
-                           select_df_within_period,
-                           build_edf_fr_vals,
-                           calculate_probab_ppt_below_thr,
-                           find_nearest,
-                           resampleDf
-                           )
+    select_df_within_period,
+    build_edf_fr_vals,
+    calculate_probab_ppt_below_thr,
+    find_nearest,
+    resampleDf
+)
 
 from _01_read_hdf5 import HDF5
 
@@ -97,9 +97,13 @@ min_qt_to_correct = 0.75  # correct all qunatiles above it
 
 vg_sill_b4_scale = 0.07
 vg_range = 4e4
+
 vg_model_str = 'Sph'
 vg_model_to_scale = '%0.3f %s(%0.1f)' % (
     vg_sill_b4_scale, vg_model_str, vg_range)
+
+# pykrig
+vg_model_str = 'spherical'
 
 n_workers = 1
 # ===========================================================
@@ -192,9 +196,9 @@ def process_manager(args):
     # pws first filter
 
     df_gd_stns = pd.read_csv(path_to_pws_gd_stns,
-                                  index_col=0,
-                                  sep=';',
-                                  encoding='utf-8')
+                             index_col=0,
+                             sep=';',
+                             encoding='utf-8')
 
     #=========================================================
 
@@ -231,7 +235,6 @@ def process_manager(args):
 
     procs = []
     for pws_ids_with_good_data in all_pws_stns_ids_worker:
-
 
         procs.append(mp.Process(
             target=correct_pws, args=[(in_pws_df_coords_utm32,
@@ -289,7 +292,7 @@ def correct_pws(args):
             y0_prim_netw[y0_prim_netw == 1] = 0.99999999
             # find nearest prim_netw ppt to pws percentile
             nearst_prim_netw_edf = find_nearest(array=y0_prim_netw,
-                                          value=edf_pws)
+                                                value=edf_pws)
             ppt_idx = np.where(y0_prim_netw == nearst_prim_netw_edf)
 
             ppt_for_edf = x0_prim_netw[ppt_idx][0]
@@ -307,7 +310,7 @@ def correct_pws(args):
 
         vgs_model_dwd_ppt = (str(
             np.round(vg_scaling_ratio, 4)) + ' '
-            +vg_model_to_scale.split(" ")[1])
+            + vg_model_to_scale.split(" ")[1])
 
         return vgs_model_dwd_ppt
 
@@ -329,20 +332,32 @@ def correct_pws(args):
             prim_netw_in_coords_df.loc[prim_netw_stns, 'Y'])
 
         # sacle variogram based on prim_netw ppt
-        vgs_model_dwd_ppt = scale_vg_based_on_prim_netw_ppt(
-            prim_netw_ppt_pws_edf.values, vg_sill_b4_scale)
+#         vgs_model_dwd_ppt = scale_vg_based_on_prim_netw_ppt(
+#             prim_netw_ppt_pws_edf.values, vg_sill_b4_scale)
 
         # start kriging pws location
-        OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
-                                            yi=prim_netw_ycoords,
-                                            zi=prim_netw_ppt_pws_edf.values,
-                                            xk=np.array([xpws]),
-                                            yk=np.array([ypws]),
-                                            model=vgs_model_dwd_ppt)
+#         OK_prim_netw_pws_crt = OKpy(xi=prim_netw_xcoords,
+#                                     yi=prim_netw_ycoords,
+#                                     zi=prim_netw_ppt_pws_edf.values,
+#                                     xk=np.array([xpws]),
+#                                     yk=np.array([ypws]),
+#                                     model=vgs_model_dwd_ppt)
+
+        dwd_vals_var = np.var(prim_netw_ppt_pws_edf.values)
+        vg_scaling_ratio = dwd_vals_var / vg_sill_b4_scale
+        OK_prim_netw_pws_crt = OKpy(
+            prim_netw_xcoords, prim_netw_ycoords, prim_netw_ppt_pws_edf.values,
+            variogram_model=vg_model_str,
+            variogram_parameters={
+                'sill': vg_scaling_ratio,
+                'range': vg_range,
+                'nugget': 0})
 
         try:
-            OK_prim_netw_pws_crt.krige()
-            zvalues = OK_prim_netw_pws_crt.zk.copy()
+            zvalues, _ = OK_prim_netw_pws_crt.execute(
+                'points', np.array([xpws]),  np.array([ypws]))
+#             OK_prim_netw_pws_crt.krige()
+#             zvalues = OK_prim_netw_pws_crt.zk.copy()
         except Exception:
             print('error kriging pws location')
 
@@ -408,13 +423,12 @@ def correct_pws(args):
         pws_stn_str = pws_stn.replace(':', '_')
         print('Correcting ', pws_stn, ': ', ix, '/', len(pws_ids))
 
-
         try:
             pws_ppt_df = HDF5_pws_ppt.get_pandas_dataframe(pws_stn)
 
             pws_ppt_df_start_end = select_df_within_period(pws_ppt_df,
-                                                          start=start_date,
-                                                          end=end_date)
+                                                           start=start_date,
+                                                           end=end_date)
 
             # select only convective season
             pws_ppt_df_summer = select_convective_season(
@@ -443,13 +457,13 @@ def correct_pws(args):
                 # get prim_netw ppt data for this time period
                 prim_netw_ppt_neigbrs = (
                     HDF5_prim_netw_ppt.get_pandas_dataframe_bet_dates(
-                    prim_netw_stns_near, start_date=pws_edf_df.index[0],
-                    end_date=pws_edf_df.index[-1]))
+                        prim_netw_stns_near, start_date=pws_edf_df.index[0],
+                        end_date=pws_edf_df.index[-1]))
 
                 pws_edf_df_zeros = pws_edf_df[pws_edf_df.values <=
-                                                      min_qt_to_correct]
+                                              min_qt_to_correct]
                 pws_edf_df_not_zeros = pws_edf_df[pws_edf_df.values >
-                                                          min_qt_to_correct]
+                                                  min_qt_to_correct]
 
                 pws_ppt_corrected_not_zeros = pws_edf_df_not_zeros.apply(
                     correct_pws_inner_loop, axis=1, raw=True)
@@ -499,4 +513,3 @@ if __name__ == '__main__':
         path_to_ppt_pws_data_hdf5,
         path_to_ppt_prim_netw_data_hdf5)
     process_manager(args)
-
