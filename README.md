@@ -2,7 +2,7 @@
  -----------------------------------------------------------------------------------------------
 ### **How to cite:**
 
-https://doi.org/10.5281/zenodo.4501920
+https://doi.org/10.5281/zenodo.4501919
 
 ### Reference paper:
 Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observations to improve precipitation estimation and interpolation, Hydrol. Earth Syst. Sci., 25, 583–601, https://doi.org/10.5194/hess-25-583-2021, 2021.
