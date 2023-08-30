@@ -308,8 +308,8 @@ if __name__ == '__main__':
     xstn = df_prim_coords.loc[id_stn_prim_ams,:].X
     ystn = df_prim_coords.loc[id_stn_prim_ams,:].Y
     
-    temp_agg_list = ['60min', '120min', '360min', '720min', '1440min']
-    # temp_agg_list = ['1440min']
+    temp_agg_list = ['60min', '120min', '180min']#, '720min', '1440min']
+    temp_agg_list = ['1440min']
     for temp_agg in temp_agg_list:
         df_pws_pcp_hourly_raw_res = df_pws_pcp_hourly_raw.resample(temp_agg).sum()
         df_pws_pcp_hourly_res = df_pws_pcp_hourly.resample(temp_agg).sum()
@@ -621,6 +621,8 @@ if __name__ == '__main__':
             
         
         
+        
+        
         # In[386]:
         
         
@@ -640,28 +642,57 @@ if __name__ == '__main__':
             axis=0, how='all').index).intersection(df_pws_radar.dropna(
             axis=0, how='all').index).intersection(obsv_res.index)
         
-        obsv_vals = obsv_res.loc[cmn_idx_final, :].dropna()#.shift(1)
+        obsv_vals = obsv_res.loc[cmn_idx_final, :].dropna()#.shift(1)  
         
-    
+        if temp_agg == '60min':
+            obsv_vals_shift = obsv_vals.shift(1).dropna()
+        else:
+            obsv_vals_shift = obsv_vals.shift(0).dropna() 
+        
+        cmn_idx_final = df_pws_raw.dropna(
+            axis=0, how='all').index.intersection(df_pws_pwspyqc.dropna(
+            axis=0, how='all').index).intersection(df_pws_pwsqc.dropna(
+            axis=0, how='all').index).intersection(df_pws_intense.dropna(
+            axis=0, how='all').index).intersection(df_pws_radar.dropna(
+            axis=0, how='all').index).intersection(obsv_vals_shift.index)
+        
+        df_pws_raw.loc[cmn_idx_final, :].to_csv(r'X:\staff\elhachem\2022_02_01_OpenSense\interpolation'
+                    r'\%s_df_pws_raw.csv' % temp_agg, sep=',')
+        
+        df_pws_pwspyqc.loc[cmn_idx_final, :].to_csv(r'X:\staff\elhachem\2022_02_01_OpenSense\interpolation'
+                    r'\%s_df_pws_pwspyqc.csv' % temp_agg, sep=',')
+        
+        df_pws_pwsqc.loc[cmn_idx_final, :].to_csv(r'X:\staff\elhachem\2022_02_01_OpenSense\interpolation'
+                    r'\%s_df_pws_pwsqc.csv' % temp_agg, sep=',')
+        
+        df_pws_intense.loc[cmn_idx_final, :].to_csv(r'X:\staff\elhachem\2022_02_01_OpenSense\interpolation'
+                    r'\%s_df_pws_intense.csv' % temp_agg, sep=',')
+        
+        df_pws_radar.loc[cmn_idx_final, :].to_csv(r'X:\staff\elhachem\2022_02_01_OpenSense\interpolation'
+                    r'\%s_df_pws_radar.csv' % temp_agg, sep=',')
+        
+        obsv_res.loc[cmn_idx_final, :].to_csv(r'X:\staff\elhachem\2022_02_01_OpenSense\interpolation'
+                    r'\%s_obsv_res.csv' % temp_agg, sep=',')
+        
+        #raise Exception
     
         prs_obsv_raw, spr_obsv_raw, rmse_obsv_raw = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_raw.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(),                    df_pws_raw.loc[cmn_idx_final, :].values.ravel())
         
         prs_obsv_pwspyqc, spr_obsv_pwspyqc, rmse_obsv_pwspyqc = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_pwspyqc.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(),                    df_pws_pwspyqc.loc[cmn_idx_final, :].values.ravel())
         
         prs_obsv_pwsqc, spr_obsv_pwsqc, rmse_obsv_pwsqc = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_pwsqc.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(),                    df_pws_pwsqc.loc[cmn_idx_final, :].values.ravel())
         
         prs_obsv_intense, spr_obsv_intense, rmse_obsv_intense = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_intense.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(),                    df_pws_intense.loc[cmn_idx_final, :].values.ravel())
         
         
         prs_obsv_radar, spr_obsv_radar, rmse_obsv_radar = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),
-                    df_pws_radar.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals.loc[cmn_idx_final, :].values.ravel(),  df_pws_radar.loc[cmn_idx_final, :].values.ravel())
         
-        df_tables_metric = pd.DataFrame(columns=['Raw-PWS', 'PWSQC', 'PWS-pyQC', 'INTENSE-QC', 'Radar'],
+        df_tables_metric = pd.DataFrame(columns=['Raw-PWS', 'PWSQC', 'PWS-pyQC', 'GSDR-QC', 'Radar'],
                                         index=['prs', 'spr', 'rmse'])
         df_tables_metric.loc['prs', :] = [prs_obsv_raw, prs_obsv_pwsqc, prs_obsv_pwspyqc, prs_obsv_intense, prs_obsv_radar]
         df_tables_metric.loc['spr', :] = [spr_obsv_raw, spr_obsv_pwsqc, spr_obsv_pwspyqc, spr_obsv_intense, spr_obsv_radar]
@@ -673,31 +704,21 @@ if __name__ == '__main__':
     
     
         #df_pws_raw
-        plt.scatter(obsv_vals.loc[cmn_idx_final, :].values.ravel(),
-                    df_pws_raw.loc[cmn_idx_final, :].values.ravel(),
-                     c='orange', marker='2', label='PWS-Raw', alpha=0.5)
+        plt.scatter(obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(),     df_pws_raw.loc[cmn_idx_final, :].values.ravel(),
+                     c='orange', marker='2', label=r'$PWS-Raw-\rho=%0.2f$' % prs_obsv_raw, alpha=0.5)
         
         
-        plt.scatter(obsv_vals.loc[cmn_idx_final, :].values.ravel(),
-                    df_pws_pwsqc.loc[cmn_idx_final, :].values.ravel(),
-                     c='r', marker='o', label='PWSQC', alpha=0.5)
+        plt.scatter(obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(), df_pws_pwsqc.loc[cmn_idx_final, :].values.ravel(),
+                     c='r', marker='o', label=r'$PWSQC-\rho=%0.2f$' % prs_obsv_pwsqc, alpha=0.5)
         
-        plt.scatter(obsv_vals.loc[cmn_idx_final, :].values.ravel(),
-                    df_pws_pwspyqc.loc[cmn_idx_final, :].values.ravel(),
-                     alpha=0.5,    
-                    c='b', marker=',',label='PWS-pyQC')
+        plt.scatter(obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(), df_pws_pwspyqc.loc[cmn_idx_final, :].values.ravel(),
+                     alpha=0.5, c='b', marker=',',label=r'$PWS-pyQC-\rho=%0.2f$' % prs_obsv_pwspyqc)
         
-        plt.scatter(obsv_vals.loc[cmn_idx_final, :].values.ravel(),
-                    df_pws_intense.loc[cmn_idx_final, :].values.ravel(),
-                       alpha=0.5, 
-                        c='lime',    
-                       marker='d', label='INTENSE')
+        plt.scatter(obsv_vals_shift.loc[cmn_idx_final, :].values.ravel(),  df_pws_intense.loc[cmn_idx_final, :].values.ravel(),
+                       alpha=0.5,  c='lime',  marker='d', label=r'$GSDR-QC-\rho=%0.2f$' % prs_obsv_intense)
         
-        plt.scatter(obsv_vals.loc[cmn_idx_final, :].values.ravel(),
-                    df_pws_radar.loc[cmn_idx_final, :].values.ravel(),
-                       alpha=0.5,
-                        c='k', 
-                    marker='3', label='Radar')
+        plt.scatter(obsv_vals.loc[cmn_idx_final, :].values.ravel(),  df_pws_radar.loc[cmn_idx_final, :].values.ravel(),
+                       alpha=0.5, c='k',  marker='3', label=r'$Radar-\rho=%0.2f$' % prs_obsv_radar)
         
         # plt.scatter(obsv_vals.loc[cmn_idx_final, :].values.ravel(),
                     # obsv_vals.loc[cmn_idx_final, :].values.ravel(), c='gray', alpha=0.25,marker='.')
@@ -712,7 +733,7 @@ if __name__ == '__main__':
         plt.legend(loc=0)
         plt.tight_layout()
         plt.savefig(r'X:\staff\elhachem\2022_02_01_OpenSense\interpolation'
-                    r'\%s_pcp_b4_cross.png' % temp_agg, bbox_inches='tight')
+                    r'\%s_pcp_b4_cross2.png' % temp_agg, bbox_inches='tight')
         plt.close()
     
 
@@ -720,36 +741,35 @@ if __name__ == '__main__':
     # 
     #===========================================================================
         
-        min_pcp_thr_list = [0, 1, 5, 10]
+        min_pcp_thr_list = [0]#, 1, 5, 10]
         
         df_mean_corr = pd.DataFrame(index=min_pcp_thr_list,
-                                    columns=['Raw-PWS', 'PWS-pyQC',
-                                             'PWSQC', 'INTENSE-QC', 'Radar'])
+                                    columns=['Raw-PWS', 'PWS-pyQC', 'PWSQC', 'GSDR-QC', 'Radar'])
         # In[410]:
         for min_pcp_thr in min_pcp_thr_list:
             print(min_pcp_thr)
             df_spr_corr = pd.DataFrame(index=obsv_vals.columns,
                                    columns=['Raw-PWS', 'PWS-pyQC',
-                                             'PWSQC', 'INTENSE-QC', 'Radar'],
+                                             'PWSQC', 'GSDR-QC', 'Radar'],
                                    data=-9)
             df_pears_corr = pd.DataFrame(index=obsv_vals.columns,
                                         columns=['Raw-PWS', 'PWS-pyQC',
-                                                  'PWSQC', 'INTENSE-QC', 'Radar'],
+                                                  'PWSQC', 'GSDR-QC', 'Radar'],
                                         data=-9)
             df_indic_corr = pd.DataFrame(index=obsv_vals.columns,
                                        columns=['Raw-PWS', 'PWS-pyQC',
-                                                 'PWSQC', 'INTENSE-QC', 'Radar'],
+                                                 'PWSQC', 'GSDR-QC', 'Radar'],
                                        data=-9)
             
         
             df_rmse = pd.DataFrame(index=obsv_vals.columns,
                                         columns=['Raw-PWS', 'PWS-pyQC',
-                                                  'PWSQC', 'INTENSE-QC', 'Radar'],
+                                                  'PWSQC', 'GSDR-QC', 'Radar'],
                                         data=-9)
             
             for _loc in obsv_vals.columns:
-                obsv_vals_loc = obsv_vals.loc[:, _loc].dropna()
-                
+                obsv_vals_loc = obsv_vals_shift.loc[:, _loc].dropna()
+                obsv_val_loc_orig = obsv_vals.loc[:, _loc].dropna()
                 obsv_vals_loc = obsv_vals_loc[obsv_vals_loc >= min_pcp_thr].dropna()
                 interp_pws_raw = df_pws_raw.loc[:, _loc].dropna()
                 interp_pws_pwspyqc = df_pws_pwspyqc.loc[:, _loc].dropna()
@@ -779,7 +799,7 @@ if __name__ == '__main__':
                         interp_pws_intense.loc[cmn_idx_all].values.ravel())
                         
                 prs_obsv_radar, spr_obsv_radar, rms_radar = calc_prs_spr_corr(
-                    obsv_vals_loc.loc[cmn_idx_all].values.ravel(),
+                    obsv_val_loc_orig.loc[cmn_idx_all].values.ravel(),
                     interp_pws_radar.loc[cmn_idx_all].values.ravel())
                 
                 
@@ -812,15 +832,15 @@ if __name__ == '__main__':
             # 
             #===========================================================================
             
-            xlabels = ['Raw-PWS', 'PWSQC', 'PWS-pyQC', 'INTENSE-QC', 'Radar']
-            
+            # xlabels = ['Raw-PWS', 'PWSQC', 'PWS-pyQC', 'GSDR-QC', 'Radar']
+            xlabels = ['Raw-PWS', 'PWSQC', 'PWS-pyQC', 'GSDR-QC']
             labels = [0, 1, 2, 3, 4]
             plt.ioff()
             # df_spr_corr
             plt.rcParams["figure.autolayout"] = True
             fig, (ax1) = plt.subplots(1, 1, figsize=(6,4), dpi=300)
             
-            ax1.set_xlabel('QC Algorithm')
+            ax1.set_xlabel('Datasets')
             
             
             # Create a legend for the first line.
@@ -829,7 +849,7 @@ if __name__ == '__main__':
                      df_spr_corr.iloc[:,2],
                     df_spr_corr.iloc[:,1],
                     df_spr_corr.iloc[:,3],
-                    df_spr_corr.iloc[:,4]
+                    # df_spr_corr.iloc[:,4]
                     ]
             
             
@@ -862,8 +882,10 @@ if __name__ == '__main__':
             #second_legend = plt.legend([bp0["boxes"][0]], [ 'RCP8.5 Raw'], loc='upper left')
             
             ax1.set_xticks(ticks=range(1, len(xlabels)+1), labels=xlabels)
+            ax1.set_yticks(ticks=np.arange(0, 1.01, 0.2))
             
-            # ax1.set_ylim([0.6, 1])
+            ax1.set_ylim([0., 1.01])
+            
             ax1.grid(alpha=0.25)
             #ax1.legend(loc='lower right')
             ax1.set_ylabel('Spearman Correlation')
@@ -871,14 +893,13 @@ if __name__ == '__main__':
             
             plt.savefig(r'X:\staff\elhachem\2022_02_01_OpenSense'
                         r'\data_Netherland_PWS\split_sampling'               
-                        r'\spr_corr_abv_%d_%s.png' % (min_pcp_thr, temp_agg),
+                        r'\spr_corr_abv_%d_%s_nord.png' % (min_pcp_thr, temp_agg),
                         bbox_inches='tight',transparent=False)
             
             
             #===========================================================================
             # 
             #===========================================================================
-            xlabels = ['Raw-PWS', 'PWSQC', 'PWS-pyQC', 'INTENSE-QC', 'Radar']
             
             labels = [0, 1, 2, 3, 4]
             
@@ -887,7 +908,7 @@ if __name__ == '__main__':
             plt.rcParams["figure.autolayout"] = True
             fig, (ax1) = plt.subplots(1, 1, figsize=(6,4), dpi=300)
             
-            ax1.set_xlabel('QC Algorithm')
+            ax1.set_xlabel('Datasets')
             
             
             # Create a legend for the first line.
@@ -896,7 +917,7 @@ if __name__ == '__main__':
                      df_rmse.iloc[:,2],
                     df_rmse.iloc[:,1],
                     df_rmse.iloc[:,3],
-                    df_rmse.iloc[:,4]
+                    # df_rmse.iloc[:,4]
                     ]
             
             
@@ -938,7 +959,7 @@ if __name__ == '__main__':
             
             plt.savefig(r'X:\staff\elhachem\2022_02_01_OpenSense'
                         r'\data_Netherland_PWS\split_sampling'               
-                        r'\rmse_abv_%d_%s.png' % (min_pcp_thr, temp_agg),
+                        r'\rmse_abv_%d_%s_nord.png' % (min_pcp_thr, temp_agg),
                         bbox_inches='tight',transparent=False)
             
             
@@ -950,7 +971,7 @@ if __name__ == '__main__':
             plt.rcParams["figure.autolayout"] = True
             fig, (ax1) = plt.subplots(1, 1, figsize=(6,4), dpi=300)
             
-            ax1.set_xlabel('QC Algorithm')
+            ax1.set_xlabel('Datasets')
             
             
             # Create a legend for the first line.
@@ -959,7 +980,7 @@ if __name__ == '__main__':
                      df_pears_corr.iloc[:,2],
                     df_pears_corr.iloc[:,1],
                     df_pears_corr.iloc[:,3],
-                    df_pears_corr.iloc[:,4]
+                    # df_pears_corr.iloc[:,4]
                     ]
             
             
@@ -992,8 +1013,8 @@ if __name__ == '__main__':
             #second_legend = plt.legend([bp0["boxes"][0]], [ 'RCP8.5 Raw'], loc='upper left')
             
             ax1.set_xticks(ticks=range(1, len(xlabels)+1), labels=xlabels)
-            
-            # ax1.set_ylim([0.6, 1])
+            ax1.set_yticks(ticks=np.arange(0, 1.01, 0.2))
+            ax1.set_ylim([0., 1.01])
             ax1.grid(alpha=0.25)
             #ax1.legend(loc='lower right')
             ax1.set_ylabel('Pearson Correlation')
@@ -1001,7 +1022,7 @@ if __name__ == '__main__':
             
             plt.savefig(r'X:\staff\elhachem\2022_02_01_OpenSense'
                         r'\data_Netherland_PWS\split_sampling'               
-                        r'\prs_corr_abv_%d_%s.png' % (min_pcp_thr, temp_agg),
+                        r'\prs_corr_abv_%d_%snord.png' % (min_pcp_thr, temp_agg),
                         bbox_inches='tight',transparent=False)
             
         plt.ioff()
@@ -1014,7 +1035,7 @@ if __name__ == '__main__':
         plt.xticks(ticks=range(0, len(xlabels)), labels=xlabels)
         plt.grid(alpha=0.5)
         
-        plt.xlabel('QC Algorithm')
+        plt.xlabel('Datasets')
         
         plt.ylabel('Mean Pearson Correaltion')
         

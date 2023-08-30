@@ -205,9 +205,7 @@ if __name__ == '__main__':
                                     end='2018-06-01 00:00:00', freq='H')
     # read primary network 1
     print('Reading first primary network data')
-    in_primary_pcp = read_pcp_csv_file(path_to_file=path_primary_network,
-                           sep_type=';',
-                           index_col=0)
+    in_primary_pcp = read_pcp_csv_file(path_to_file=path_primary_network, sep_type=';', index_col=0)
 
     df_prim_coords, prim_coords_xy = read_metadata_csv_file(
         path_primary_metadata,
@@ -291,12 +289,14 @@ if __name__ == '__main__':
     # stn in amsterdam
     id_stn_prim_ams = '240'
     
-    
+    in_primary_pcp = in_primary_pcp.loc[:, id_stn_prim_ams].dropna()
     
     corrds_cross_val_stns = pd.read_csv(
         r"X:\staff\elhachem\2022_02_01_OpenSense\data_Netherland_PWS"
         r"\Radar_052018\05\selected_radar_grid_lonlat_crossval.csv",
         index_col=0, sep=',')
+    
+    
     
     # xobsv, yobsv = LatLon_To_XY(corrds_cross_val_stns.x_lon.values.ravel(),
                             # corrds_cross_val_stns.y_lat.values.ravel())
@@ -395,19 +395,19 @@ if __name__ == '__main__':
                                              index=index_to_krige_cmn,
                                              data=np.nan)
         
-        df_pws_raw = pd.DataFrame(columns=in_primary_pcp.columns,
+        df_pws_raw = pd.DataFrame(columns=[id_stn_prim_ams],
                                              index=index_to_krige_cmn,
                                              data=np.nan)
-        df_pws_pwspyqc= pd.DataFrame(columns=in_primary_pcp.columns,
+        df_pws_pwspyqc= pd.DataFrame(columns=[id_stn_prim_ams],
                                              index=index_to_krige_cmn,
                                              data=np.nan)
-        df_pws_pwsqc = pd.DataFrame(columns=in_primary_pcp.columns,
+        df_pws_pwsqc = pd.DataFrame(columns=[id_stn_prim_ams],
                                              index=index_to_krige_cmn,
                                              data=np.nan)
-        df_pws_intense = pd.DataFrame(columns=in_primary_pcp.columns,
+        df_pws_intense = pd.DataFrame(columns=[id_stn_prim_ams],
                                              index=index_to_krige_cmn,
                                              data=np.nan)
-        df_pws_radar = pd.DataFrame(columns=in_primary_pcp.columns,
+        df_pws_radar = pd.DataFrame(columns=[id_stn_prim_ams],
                                              index=index_to_krige_cmn,
                                              data=np.nan)
     
@@ -632,7 +632,7 @@ if __name__ == '__main__':
         
         
         obsv_res[obsv_res < 0] = np.nan
-        #obsv_res = obsv_res.shift(1)
+        # obsv_res_shifted = obsv_res.shift(1)
         obsv_res.dropna(how='all', inplace=True)
         
         cmn_idx_final = df_pws_raw.dropna(
@@ -642,25 +642,25 @@ if __name__ == '__main__':
             axis=0, how='all').index).intersection(df_pws_radar.dropna(
             axis=0, how='all').index).intersection(obsv_res.index)
         
-        obsv_vals = obsv_res.loc[cmn_idx_final, :].dropna()
+        obsv_vals = obsv_res.loc[cmn_idx_final].dropna()
         
     
     
         prs_obsv_raw, spr_obsv_raw, rmse_obsv_raw = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_raw.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals.loc[cmn_idx_final].values.ravel(),                    df_pws_raw.loc[cmn_idx_final, :].values.ravel())
         
         prs_obsv_pwspyqc, spr_obsv_pwspyqc, rmse_obsv_pwspyqc = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_pwspyqc.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals.loc[cmn_idx_final].values.ravel(),                    df_pws_pwspyqc.loc[cmn_idx_final, :].values.ravel())
         
         prs_obsv_pwsqc, spr_obsv_pwsqc, rmse_obsv_pwsqc = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_pwsqc.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals.loc[cmn_idx_final].values.ravel(),                    df_pws_pwsqc.loc[cmn_idx_final, :].values.ravel())
         
         prs_obsv_intense, spr_obsv_intense, rmse_obsv_intense = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_intense.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals.loc[cmn_idx_final].values.ravel(),                    df_pws_intense.loc[cmn_idx_final, :].values.ravel())
         
         
         prs_obsv_radar, spr_obsv_radar, rmse_obsv_radar = calc_prs_spr_corr(
-            obsv_vals.loc[cmn_idx_final, :].values.ravel(),                    df_pws_radar.loc[cmn_idx_final, :].values.ravel())
+            obsv_vals.loc[cmn_idx_final].values.ravel(),                    df_pws_radar.loc[cmn_idx_final, :].values.ravel())
         
         df_tables_metric = pd.DataFrame(columns=['Raw-PWS', 'PWSQC', 'PWS-pyQC', 'INTENSE-QC', 'Radar'],
                                         index=['prs', 'spr', 'rmse'])

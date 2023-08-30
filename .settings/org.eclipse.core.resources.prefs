@@ -1,6 +1,7 @@
 eclipse.preferences.version=1
 encoding//OpenSense/Jupyter_Notebboks/cross_validate_AMS_station_aggs.py=utf-8
 encoding//OpenSense/Jupyter_Notebboks/cross_validate_Radar_stations.py=utf-8
+encoding//OpenSense/Jupyter_Notebboks/cross_validate_Radar_stations_diagnostic.py=utf-8
 encoding//python_code/_00_functions.py=utf-8
 encoding//python_code/_01_read_hdf5.py=utf-8
 encoding//python_code/_02_pws_indicator_correlation_IBF.py=utf-8
