@@ -4,11 +4,14 @@
 
 https://doi.org/10.5281/zenodo.4501919
 
-https://hess.copernicus.org/preprints/hess-2023-195/
+
 
 ### Reference paper:
 Bárdossy, A., Seidel, J., and El Hachem, A.: The use of personal weather station observations to improve precipitation estimation and interpolation, Hydrol. Earth Syst. Sci., 25, 583–601, https://doi.org/10.5194/hess-25-583-2021, 2021.
 
+El Hachem, A., Seidel, J., O'Hara, T., Villalobos Herrera, R., Overeem, A., Uijlenhoet, R., Bárdossy, A., and de Vos, L.: Technical note: Overview and comparison of three quality control algorithms for rainfall data from personal weather stations, Hydrol. Earth Syst. Sci. Discuss. [preprint], https://doi.org/10.5194/hess-2023-195, in review, 2023.
+
+https://www.researchgate.net/profile/Abbas-El-Hachem
 -----------------------------------------------------------------------------------------------
 ### Main Procedure
 
