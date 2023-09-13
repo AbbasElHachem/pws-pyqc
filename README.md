@@ -24,6 +24,12 @@ The three main codes corresponding to the IBF, Bias correction and EBF are avail
 ![flowchart_netatmo_paper](https://user-images.githubusercontent.com/22959071/106765543-3303fb00-6639-11eb-92d8-d0e06a6044f1.png)
 
 
+** Jupyter notebook Indicator_corr_Ams
+ -----------------------------------------------------------------------------------------------
+Demonstration of applying the filters to the PWS data set of Amsterdam (check the Opensene folder for the data)
+
+https://hess.copernicus.org/preprints/hess-2023-195/
+
 -----------------------------------------------------------------------------------------------
 ### Indicator based Filter IBF
 
@@ -90,10 +96,7 @@ _04_event_based_filter_EBF.py
 -----------------------------------------------------------------------------------------------
 
 
-### Jupyter notebook Indicator_corr_Ams
- -----------------------------------------------------------------------------------------------
-Demonstration of applying the filters to the PWS data set of Amsterdam (check the Opensene folder for the data)
-https://hess.copernicus.org/preprints/hess-2023-195/
+
  
 ### Credit:
 The precipitation data was downloaded from the German Weather Service (DWD) open data server which can be found under the following link: https://opendata.dwd.de/climate_environment/CDC/
